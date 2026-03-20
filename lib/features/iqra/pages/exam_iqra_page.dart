@@ -1,9 +1,18 @@
-import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../../core/widgets/custom_gradient_appbar.dart';
+import 'dart:convert';
+import 'dart:io';
 
-import '../../../services/progress_service.dart'; // progress tracking
+import 'package:flutter/material.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:jomngaji/models/evaluation_result.dart';
+import 'package:jomngaji/services/evaluation_api.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../../../core/widgets/custom_gradient_appbar.dart';
+import '../../../features/auth/services/auth_service.dart';
+import '../../../services/progress_service.dart';
 
 class ExamIqraPage extends StatefulWidget {
   const ExamIqraPage({super.key});
@@ -12,216 +21,481 @@ class ExamIqraPage extends StatefulWidget {
   State<ExamIqraPage> createState() => _ExamIqraPageState();
 }
 
+enum _ExamType { mcq, pronunciation }
+
+class _ExamQuestion {
+  final _ExamType type;
+  final String prompt;
+  final String arabic;
+  final List<String> options;
+  final String correct;
+  final String? targetPronunciation;
+
+  const _ExamQuestion.mcq({
+    required this.prompt,
+    required this.arabic,
+    required this.options,
+    required this.correct,
+  })  : type = _ExamType.mcq,
+        targetPronunciation = null;
+
+  const _ExamQuestion.pronunciation({
+    required this.prompt,
+    required this.arabic,
+    required this.targetPronunciation,
+  })  : type = _ExamType.pronunciation,
+        options = const [],
+        correct = '';
+}
+
 class _ExamIqraPageState extends State<ExamIqraPage> {
-  final List<Map<String, String>> examQuestions = [
-    {"ar": "بَ", "lat": "BA"},
-    {"ar": "بِ", "lat": "BI"},
-    {"ar": "بُ", "lat": "BU"},
-    {"ar": "بَا", "lat": "BAA"},
-    {"ar": "كُو", "lat": "KUU"},
-    {"ar": "فِي", "lat": "FII"},
-    {"ar": "كَتَبَ", "lat": "KATABA"},
-    {"ar": "فَرِحَ", "lat": "FARIHA"},
-    {"ar": "قَلْبٍ", "lat": "QALBIN"},
-    {"ar": "يَفْهَمُ", "lat": "YAFHAMU"},
-    {"ar": "مُحَمَّد", "lat": "MUHAMMAD"},
-    {"ar": "قَالَ", "lat": "QAALA"},
-    {"ar": "قُلْ هُوَ اللّٰهُ أَحَدٌ", "lat": "Qul huwallahu ahad"},
+  static const String _baseUrl = 'http://10.71.164.20:4000';
+
+  final List<_ExamQuestion> _questions = const [
+    _ExamQuestion.mcq(
+      prompt: 'Pilih bacaan yang benar',
+      arabic: 'بَ',
+      options: ['BA', 'BI', 'BU'],
+      correct: 'BA',
+    ),
+    _ExamQuestion.pronunciation(
+      prompt: 'Latihan pengucapan',
+      arabic: 'تَ',
+      targetPronunciation: 'ت',
+    ),
+    _ExamQuestion.mcq(
+      prompt: 'Pilih bacaan yang benar',
+      arabic: 'قُلْ هُوَ اللّٰهُ أَحَدٌ',
+      options: ['Qul huwallahu ahad', 'Qala huwallahu ahad', 'Qul huwa lahu ahad'],
+      correct: 'Qul huwallahu ahad',
+    ),
+    _ExamQuestion.pronunciation(
+      prompt: 'Latihan pengucapan',
+      arabic: 'ح',
+      targetPronunciation: 'ح',
+    ),
+    _ExamQuestion.mcq(
+      prompt: 'Pilih bacaan yang benar',
+      arabic: 'فِي',
+      options: ['FII', 'FAA', 'FUU'],
+      correct: 'FII',
+    ),
+    _ExamQuestion.pronunciation(
+      prompt: 'Latihan pengucapan',
+      arabic: 'غ',
+      targetPronunciation: 'غ',
+    ),
+    _ExamQuestion.mcq(
+      prompt: 'Pilih bacaan yang benar',
+      arabic: 'مُحَمَّد',
+      options: ['MUHAMMAD', 'MIHAMMAD', 'MUHIMID'],
+      correct: 'MUHAMMAD',
+    ),
+    _ExamQuestion.pronunciation(
+      prompt: 'Latihan pengucapan',
+      arabic: 'ض',
+      targetPronunciation: 'ض',
+    ),
+    _ExamQuestion.mcq(
+      prompt: 'Pilih bacaan yang benar',
+      arabic: 'قَلْبٍ',
+      options: ['QALBIN', 'QALBAN', 'QULBIN'],
+      correct: 'QALBIN',
+    ),
+    _ExamQuestion.pronunciation(
+      prompt: 'Latihan pengucapan',
+      arabic: 'ن',
+      targetPronunciation: 'ن',
+    ),
   ];
 
-  int currentIndex = 0;
-  int score = 0;
-  int totalXP = 0;
-  List<String> options = [];
+  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  final FlutterSoundPlayer _player = FlutterSoundPlayer();
+  late final EvaluationApi _api;
+
+  int _currentIndex = 0;
+  int _mcqCorrect = 0;
+  int _pronunciationPassed = 0;
+  final List<double> _recordingScores = [];
+
+  bool _answerLocked = false;
+  String? _selectedOption;
+  String _feedback = '';
+
+  bool _recorderReady = false;
+  bool _isRecording = false;
+  bool _isPlaying = false;
+  bool _isEvaluating = false;
+  String? _recordedPath;
+  bool _pronunciationDone = false;
 
   @override
   void initState() {
     super.initState();
-    generateOptions();
+    _api = EvaluationApi(_baseUrl);
+    _initRecorder();
   }
 
-  void generateOptions() {
-    final random = Random();
-    final correct = examQuestions[currentIndex]["lat"]!;
+  Future<void> _initRecorder() async {
+    await Permission.microphone.request();
+    await Permission.storage.request();
 
-    options = [correct];
+    if (!await Permission.microphone.isGranted) return;
 
-    while (options.length < 3) {
-      final randomOpt =
-          examQuestions[random.nextInt(examQuestions.length)]["lat"]!;
-      if (!options.contains(randomOpt)) options.add(randomOpt);
-    }
+    await _recorder.openRecorder();
+    await _player.openPlayer();
 
-    options.shuffle();
-    setState(() {});
+    if (mounted) setState(() => _recorderReady = true);
   }
 
-  void answer(String selected) async {
-    final correct = examQuestions[currentIndex]["lat"]!;
+  @override
+  void dispose() {
+    _recorder.closeRecorder();
+    _player.closePlayer();
+    _api.dispose();
+    super.dispose();
+  }
 
-    if (selected == correct) {
-      score++;
-      totalXP += 10; // Tambah XP kalau benar
-    }
+  _ExamQuestion get _q => _questions[_currentIndex];
 
-    // Jika sudah soal terakhir
-    if (currentIndex == examQuestions.length - 1) {
-      // Simpan skor tes akhir
-      await ProgressService.saveExamScore(score);
+  Future<void> _answerMcq(String selected) async {
+    if (_answerLocked) return;
 
-      // Simpan total XP
-      await ProgressService.saveXP(totalXP);
+    final correct = _q.correct;
+    final isCorrect = selected == correct;
 
-      // Jika nilai >= 50 → anggap lulus → unlock pelajaran Iqra selanjutnya (opsional)
-      if (score >= ProgressService.passingScore) {
-        // misal unlock pelajaran ke-2
-        await ProgressService.saveLessonScore(1, 100);
-      }
+    setState(() {
+      _answerLocked = true;
+      _selectedOption = selected;
+      _feedback = isCorrect ? '✅ Benar' : '❌ Salah. Jawaban: $correct';
+      if (isCorrect) _mcqCorrect++;
+    });
 
-      showResult();
+    await Future<void>.delayed(const Duration(milliseconds: 850));
+    _goNext();
+  }
+
+  Future<void> _startRecording() async {
+    if (!_recorderReady || _isRecording) return;
+
+    final dir = await getTemporaryDirectory();
+    final path =
+        '${dir.path}/exam_iqra_${DateTime.now().millisecondsSinceEpoch}.aac';
+
+    await _recorder.startRecorder(
+      toFile: path,
+      codec: Codec.aacADTS,
+      sampleRate: 16000,
+      numChannels: 1,
+      bitRate: 16000,
+    );
+
+    setState(() {
+      _isRecording = true;
+      _recordedPath = path;
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    if (!_isRecording) return;
+    final path = await _recorder.stopRecorder();
+    setState(() {
+      _isRecording = false;
+      if (path != null) _recordedPath = path;
+    });
+  }
+
+  Future<void> _playRecorded() async {
+    if (_recordedPath == null || _isPlaying) return;
+    if (!File(_recordedPath!).existsSync()) return;
+
+    setState(() => _isPlaying = true);
+    await _player.startPlayer(
+      fromURI: _recordedPath,
+      whenFinished: () {
+        if (mounted) setState(() => _isPlaying = false);
+      },
+    );
+  }
+
+  Future<void> _evaluatePronunciation() async {
+    if (_isEvaluating) return;
+    if (_recordedPath == null) {
+      _showSnack('Rekam suara dulu sebelum dinilai.');
       return;
     }
 
-    // Lanjut soal berikutnya
-    currentIndex++;
-    generateOptions();
+    setState(() => _isEvaluating = true);
+    try {
+      final json = await _api.evaluateAudio(
+        audioPath: _recordedPath!,
+        targetText: _q.targetPronunciation!,
+        lessonId: 999,
+      );
+      final result = EvaluationResult.fromJson(json);
+      final score = result.score.clamp(0, 100);
+
+      _recordingScores.add(score.toDouble());
+      if (score >= 50) _pronunciationPassed++;
+
+      setState(() {
+        _pronunciationDone = true;
+        _feedback = 'Skor pengucapan: $score';
+      });
+    } catch (e) {
+      _showSnack('Gagal evaluasi pengucapan: $e');
+    } finally {
+      if (mounted) setState(() => _isEvaluating = false);
+    }
   }
 
-  void showResult() {
-    String feedbackMessage;
+  Future<void> _goNext() async {
+    if (!mounted) return;
 
-    if (score == examQuestions.length) {
-      feedbackMessage =
-          "🎉 LULUS! Semua jawaban benar, kamu luar biasa!";
-    } else if (score > examQuestions.length / 2) {
-      feedbackMessage =
-          "Bagus! Jawaban kamu lebih banyak benar. Terus belajar!";
-    } else {
-      feedbackMessage =
-          "Perlu latihan lagi ya 😊. Jangan menyerah, kamu bisa!";
+    if (_currentIndex >= _questions.length - 1) {
+      await _finishExam();
+      return;
     }
 
+    setState(() {
+      _currentIndex++;
+      _answerLocked = false;
+      _selectedOption = null;
+      _feedback = '';
+      _recordedPath = null;
+      _pronunciationDone = false;
+    });
+  }
+
+  Future<void> _finishExam() async {
+    final totalQuestions = _questions.length;
+    final totalCorrect = _mcqCorrect + _pronunciationPassed;
+    final finalScore = (totalCorrect / totalQuestions) * 100;
+
+    try {
+      await _submitIqraExam(
+        totalQuestions: totalQuestions,
+        correctAnswers: totalCorrect,
+        recordingScores: _recordingScores,
+      );
+    } catch (e) {
+      _showSnack('Gagal submit exam ke server: $e');
+    }
+
+    await ProgressService.saveExamScore(totalCorrect);
+    await ProgressService.saveXP(totalCorrect * 10);
+
+    if (!mounted) return;
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          "Tes Selesai!",
+          'Tes Akhir Selesai 🎉',
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
         content: Text(
-          "Skor kamu: $score dari ${examQuestions.length}\n\n$feedbackMessage",
+          'Pilihan ganda benar: $_mcqCorrect/5\n'
+          'Pengucapan lolos: $_pronunciationPassed/5\n'
+          'Final score: ${finalScore.toStringAsFixed(1)}%\n\n'
+          'Skor pengucapan tersimpan ke exam (recording_scores).',
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 16),
+          style: GoogleFonts.poppins(fontSize: 14),
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pop(context); // balik ke Iqra Dasar
+              Navigator.pop(context);
             },
-            child: const Text("Kembali"),
-          ),
+            child: const Text('Kembali'),
+          )
         ],
       ),
     );
   }
 
-  Widget buildOption(String text) {
-    return GestureDetector(
-      onTap: () => answer(text),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF42C88A),
-            ),
-          ),
-        ),
-      ),
+  Future<void> _submitIqraExam({
+    required int totalQuestions,
+    required int correctAnswers,
+    required List<double> recordingScores,
+  }) async {
+    final headers = await AuthService.authHeaders(
+      extra: {'Content-Type': 'application/json'},
+    );
+
+    final res = await http.post(
+      Uri.parse('$_baseUrl/iqra-exam/submit'),
+      headers: headers,
+      body: jsonEncode({
+        'total_questions': totalQuestions,
+        'correct_answers': correctAnswers,
+        'recording_scores': recordingScores,
+      }),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('[${res.statusCode}] ${res.body}');
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final data = examQuestions[currentIndex];
+    final progress = (_currentIndex + 1) / _questions.length;
 
     return Scaffold(
-      appBar: const CustomGradientAppBar(title: "Tes Akhir Iqra"),
+      appBar: const CustomGradientAppBar(title: 'Tes Akhir Iqra'),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         child: Column(
           children: [
-            // PROGRESS BAR
             LinearProgressIndicator(
-              value: (currentIndex + 1) / examQuestions.length,
-              backgroundColor: Colors.grey[300],
+              value: progress,
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(16),
               color: const Color(0xFF42C88A),
+              backgroundColor: Colors.grey.shade300,
             ),
-            const SizedBox(height: 25),
-
+            const SizedBox(height: 8),
             Text(
-              "Baca bacaan berikut:",
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              'Soal ${_currentIndex + 1}/${_questions.length} • ${_q.type == _ExamType.mcq ? 'Pilihan Ganda' : 'Pengucapan'}',
+              style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
             ),
-            const SizedBox(height: 18),
-
-            // ARABIC
+            const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 25),
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF2FFF6),
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: Center(
-                child: Text(
-                  data["ar"]!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 45,
-                    color: Color(0xFF42C88A),
-                    fontWeight: FontWeight.bold,
-                    height: 1.8,
+              child: Column(
+                children: [
+                  Text(
+                    _q.prompt,
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _q.arabic,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 42,
+                      color: Color(0xFF42C88A),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 35),
-
-            Expanded(
-              child: ListView.separated(
-                itemCount: options.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 14),
-                itemBuilder: (_, i) => buildOption(options[i]),
+            const SizedBox(height: 14),
+            Text(
+              _feedback,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                color: _feedback.contains('✅') ? Colors.green : Colors.red,
               ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: _q.type == _ExamType.mcq ? _buildMcqOptions() : _buildPronunciationPanel(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMcqOptions() {
+    return ListView.separated(
+      itemCount: _q.options.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, i) {
+        final opt = _q.options[i];
+        final selected = _selectedOption == opt;
+
+        return GestureDetector(
+          onTap: () => _answerMcq(opt),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: selected ? const Color(0xFFE7FFF2) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected ? const Color(0xFF42C88A) : Colors.grey.shade300,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                opt,
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF2F9E6E),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPronunciationPanel() {
+    return Column(
+      children: [
+        ElevatedButton.icon(
+          onPressed: _isRecording ? _stopRecording : _startRecording,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _isRecording ? Colors.red : const Color(0xFF42C88A),
+            foregroundColor: Colors.white,
+          ),
+          icon: Icon(_isRecording ? Icons.stop : Icons.mic),
+          label: Text(_isRecording ? 'Stop Rekam' : 'Mulai Rekam'),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _isPlaying ? null : _playRecorded,
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('Putar'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _isEvaluating ? null : _evaluatePronunciation,
+                icon: const Icon(Icons.auto_awesome),
+                label: Text(_isEvaluating ? 'Menilai...' : 'Nilai'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _pronunciationDone ? _goNext : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2F9E6E),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Lanjut'),
+          ),
+        ),
+      ],
     );
   }
 }
