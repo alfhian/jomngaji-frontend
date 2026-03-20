@@ -1,41 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'features/auth/services/auth_service.dart';
 import 'routes/app_routes.dart';
 
-void main() {
-  runApp(const JomNgajiApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final loggedIn = await AuthService.isLoggedIn();
+  runApp(JomNgajiApp(isLoggedIn: loggedIn));
 }
 
 class JomNgajiApp extends StatelessWidget {
-  const JomNgajiApp({super.key});
+  final bool isLoggedIn;
+
+  const JomNgajiApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "JomNgaji",
+      title: 'JomNgaji',
       debugShowCheckedModeBanner: false,
-
       theme: ThemeData(
         useMaterial3: true,
-
-        // ========================================
-        // 1. Default UI Font = Poppins
-        // ========================================
         textTheme: GoogleFonts.poppinsTextTheme(),
-
-        // ========================================
-        // 2. IMPORTANT FIX:
-        // Pastikan Arab tidak kena override Poppins
-        // ========================================
-        fontFamilyFallback: [
-          'Cairo',     // untuk huruf Arab
-          'Amiri',     // fallback arab tambahan
-          'Roboto',    // fallback default
+        fontFamilyFallback: const [
+          'Cairo',
+          'Amiri',
+          'Roboto',
         ],
-
-        // ========================================
-        // 3. AppBar tetap pakai Cairo (lebih Islami)
-        // ========================================
         appBarTheme: AppBarTheme(
           titleTextStyle: GoogleFonts.cairo(
             fontSize: 22,
@@ -43,12 +35,12 @@ class JomNgajiApp extends StatelessWidget {
             color: Colors.white,
           ),
           foregroundColor: Colors.white,
-          backgroundColor: Colors.green, // bisa gradient di custom widget
+          backgroundColor: Colors.green,
         ),
       ),
-
-      initialRoute: AppRoutes.home,
+      initialRoute: isLoggedIn ? AppRoutes.home : AppRoutes.login,
       routes: AppRoutes.routes,
+      onGenerateRoute: AppRoutes.onGenerateRoute,
     );
   }
 }

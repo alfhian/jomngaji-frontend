@@ -21,6 +21,12 @@ class AuthService {
     return prefs.getInt(_keyUserId);
   }
 
+
+  static Future<String?> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyName);
+  }
+
   static Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyAccessToken);
