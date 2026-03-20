@@ -87,8 +87,25 @@ class SukuKataQuestion {
   }
 }
 
+class PremiumLockedException implements Exception {
+  final String message;
+
+  const PremiumLockedException([this.message = 'Level ini hanya untuk pengguna premium.']);
+
+  @override
+  String toString() => message;
+}
+
 class SukuKataService {
   static const String baseUrl = 'http://192.168.1.141:4000';
+
+  static double _normalizeProgress(dynamic raw) {
+    final parsed = double.tryParse('${raw ?? 0}') ?? 0;
+    if (parsed > 1) {
+      return (parsed / 100).clamp(0.0, 1.0);
+    }
+    return parsed.clamp(0.0, 1.0);
+  }
 
   static Future<SukuKataLevelsPayload> getLevels() async {
     final headers = await AuthService.authHeaders();
@@ -104,7 +121,7 @@ class SukuKataService {
 
     final body = jsonDecode(response.body);
     final progress = body is Map<String, dynamic>
-        ? double.tryParse('${body['progress_percentage'] ?? 0}') ?? 0
+        ? _normalizeProgress(body['progress_percentage'])
         : 0.0;
 
     final raw = body is List
@@ -136,6 +153,10 @@ class SukuKataService {
       Uri.parse('$baseUrl/suku-kata/levels/$levelId/questions'),
       headers: headers,
     );
+
+    if (response.statusCode == 403 && response.body.contains('PREMIUM_LOCKED')) {
+      throw const PremiumLockedException();
+    }
 
     if (response.statusCode != 200) {
       throw Exception('Gagal mengambil soal level: ${response.body}');
