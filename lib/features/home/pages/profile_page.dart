@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../core/widgets/custom_gradient_appbar.dart';
 import '../../auth/services/auth_service.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -29,7 +30,9 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _loadProfileProgress();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfileProgress();
+    });
   }
 
   double _normalizeProgress(dynamic value) {
@@ -41,7 +44,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadProfileProgress() async {
     setState(() => _loading = true);
     try {
-      final headers = await AuthService.authHeaders();
+      final token = await AuthService.getAccessToken();
+      if (token == null || token.isEmpty) {
+        throw Exception('Session login tidak ditemukan. Silakan login ulang.');
+      }
+
+      final headers = {'Authorization': 'Bearer $token'};
       final userName = (await AuthService.getUserName()) ?? 'Pengguna';
 
       final avgRes = await http.get(
@@ -67,7 +75,8 @@ class _ProfilePageState extends State<ProfilePage> {
       final tadarusProgress = tadarusJson['percentage'] ??
           ((tadarusJson['total_ayah'] ?? 0) == 0
               ? 0
-              : ((tadarusJson['completed_ayah'] ?? 0) / (tadarusJson['total_ayah'] ?? 1)));
+              : ((tadarusJson['completed_ayah'] ?? 0) /
+                  (tadarusJson['total_ayah'] ?? 1)));
 
       setState(() {
         _name = userName;
@@ -134,6 +143,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomGradientAppBar(title: 'Profil Pengguna'),
+      extendBody: true,
+      bottomNavigationBar: const AppBottomNav(currentIndex: 3),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -186,11 +197,27 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  _progressTile(label: 'Iqra', value: _iqra, color: const Color(0xFF42C88A)),
-                  _progressTile(label: 'Tajwid', value: _tajwid, color: Colors.blueAccent),
-                  _progressTile(label: 'Tilawah', value: _tilawah, color: Colors.deepPurple),
-                  _progressTile(label: 'Tahfidz', value: _tahfidz, color: Colors.orange),
-                  _progressTile(label: 'Tadarus', value: _tadarus, color: Colors.teal),
+                  _progressTile(
+                      label: 'Iqra',
+                      value: _iqra,
+                      color: const Color(0xFF42C88A)),
+                  _progressTile(
+                      label: 'Tajwid',
+                      value: _tajwid,
+                      color: Colors.blueAccent),
+                  _progressTile(
+                      label: 'Tilawah',
+                      value: _tilawah,
+                      color: Colors.deepPurple),
+                  _progressTile(
+                      label: 'Tahfidz',
+                      value: _tahfidz,
+                      color: Colors.orange),
+                  _progressTile(
+                      label: 'Tadarus',
+                      value: _tadarus,
+                      color: Colors.teal),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
