@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -112,6 +113,7 @@ class _ExamIqraPageState extends State<ExamIqraPage> {
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
   final FlutterSoundPlayer _player = FlutterSoundPlayer();
   late final EvaluationApi _api;
+  late ConfettiController _resultConfetti;
 
   int _currentIndex = 0;
   int _mcqCorrect = 0;
@@ -133,6 +135,7 @@ class _ExamIqraPageState extends State<ExamIqraPage> {
   void initState() {
     super.initState();
     _api = EvaluationApi(_baseUrl);
+    _resultConfetti = ConfettiController(duration: const Duration(milliseconds: 900));
     _initRecorder();
   }
 
@@ -153,6 +156,7 @@ class _ExamIqraPageState extends State<ExamIqraPage> {
     _recorder.closeRecorder();
     _player.closePlayer();
     _api.dispose();
+    _resultConfetti.dispose();
     super.dispose();
   }
 
@@ -286,35 +290,83 @@ class _ExamIqraPageState extends State<ExamIqraPage> {
     await ProgressService.saveXP(totalCorrect * 10);
 
     if (!mounted) return;
-    showDialog(
+
+    final isGreat = finalScore >= 80;
+    if (isGreat) {
+      _resultConfetti.play();
+    }
+
+    showGeneralDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Tes Akhir Selesai 🎉',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          'Pilihan ganda benar: $_mcqCorrect/5\n'
-          'Pengucapan lolos: $_pronunciationPassed/5\n'
-          'Final score: ${finalScore.toStringAsFixed(1)}%\n\n'
-          'Skor pengucapan tersimpan ke exam (recording_scores).',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 14),
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text('Kembali'),
-          )
-        ],
-      ),
+      barrierLabel: 'result',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 320),
+      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+      transitionBuilder: (_, anim, __, ___) {
+        final v = Curves.easeOutBack.transform(anim.value);
+        return Opacity(
+          opacity: v,
+          child: Transform.scale(
+            scale: v,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (isGreat)
+                  ConfettiWidget(
+                    confettiController: _resultConfetti,
+                    blastDirection: -3.14 / 2,
+                    numberOfParticles: 16,
+                    gravity: 0.3,
+                  ),
+                Dialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isGreat ? 'MasyaAllah! Nilai Bagus 🌟' : 'Tes Akhir Selesai ✅',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 22,
+                            color: isGreat ? const Color(0xFF2F9E6E) : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Pilihan ganda benar: $_mcqCorrect/5\n'
+                          'Pengucapan lolos: $_pronunciationPassed/5\n'
+                          'Final score: ${finalScore.toStringAsFixed(1)}%',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(fontSize: 14),
+                        ),
+                        const SizedBox(height: 18),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF42C88A),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Kembali'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -354,63 +406,111 @@ class _ExamIqraPageState extends State<ExamIqraPage> {
 
     return Scaffold(
       appBar: const CustomGradientAppBar(title: 'Tes Akhir Iqra'),
-      body: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(16),
-              color: const Color(0xFF42C88A),
-              backgroundColor: Colors.grey.shade300,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/ujian-mengaji.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.bottomCenter,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Soal ${_currentIndex + 1}/${_questions.length} • ${_q.type == _ExamType.mcq ? 'Pilihan Ganda' : 'Pengucapan'}',
-              style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
+          ),
+          Positioned.fill(
+            child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF2FFF6),
-                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withOpacity(0.93),
+                    Colors.white.withOpacity(0.86),
+                    Colors.white.withOpacity(0.78),
+                  ],
+                ),
               ),
-              child: Column(
-                children: [
-                  Text(
-                    _q.prompt,
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _q.arabic,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 42,
-                      color: Color(0xFF42C88A),
-                      fontWeight: FontWeight.bold,
+                  child: Column(
+                    children: [
+                      LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 8,
+                        borderRadius: BorderRadius.circular(16),
+                        color: const Color(0xFF42C88A),
+                        backgroundColor: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Soal ${_currentIndex + 1}/${_questions.length} • ${_q.type == _ExamType.mcq ? 'Pilihan Ganda' : 'Pengucapan'}',
+                        style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.92),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        _q.prompt,
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _q.arabic,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 42,
+                          color: Color(0xFF42C88A),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 220),
+                  opacity: _feedback.isEmpty ? 0 : 1,
+                  child: Text(
+                    _feedback,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      color: _feedback.contains('✅') ? Colors.green : Colors.red,
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: _q.type == _ExamType.mcq ? _buildMcqOptions() : _buildPronunciationPanel(),
+                ),
+              ],
             ),
-            const SizedBox(height: 14),
-            Text(
-              _feedback,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w700,
-                color: _feedback.contains('✅') ? Colors.green : Colors.red,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: _q.type == _ExamType.mcq ? _buildMcqOptions() : _buildPronunciationPanel(),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
