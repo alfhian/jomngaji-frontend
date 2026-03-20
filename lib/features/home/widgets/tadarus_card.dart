@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import '../../../services/progress_service.dart';
 import '../../../routes/app_routes.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../auth/services/auth_service.dart';
 
 class TadarusCard extends StatefulWidget {
   const TadarusCard({super.key});
@@ -31,18 +31,12 @@ class _TadarusCardState extends State<TadarusCard> {
   }
 
   // ================= API =================
-  Future<int> _getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('userId') ?? 0; 
-  }
-
   Future<void> _loadGlobalProgress() async {
     try {
-      final userId = await _getUserId();
+      final headers = await AuthService.authHeaders();
       final res = await http.get(
-        Uri.parse(
-          'http://192.168.1.141:4000/tadarus/global-progress?user_id=$userId',
-        ),
+        Uri.parse('http://192.168.1.141:4000/tadarus/global-progress'),
+        headers: headers,
       );
 
       if (res.statusCode != 200) return;
