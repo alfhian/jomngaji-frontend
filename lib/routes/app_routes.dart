@@ -19,16 +19,6 @@ import '../features/iqra/pages/latihan_pengucapan_page.dart';
 import '../features/iqra/pages/materi_hijaiyah_page.dart';
 import '../features/iqra/pages/materi_huruf_detail_page.dart';
 import '../features/iqra/pages/latihan_harakat_page.dart';
-import '../features/iqra/pages/latihan_suku_kata_page.dart';
-import '../features/iqra/pages/latihan_suku_kata_level2_page.dart';
-import '../features/iqra/pages/latihan_suku_kata_level3_page.dart';
-import '../features/iqra/pages/latihan_suku_kata_level4_page.dart';
-import '../features/iqra/pages/latihan_suku_kata_level5_page.dart';
-import '../features/iqra/pages/latihan_suku_kata_level6_page.dart';
-import '../features/iqra/pages/latihan_suku_kata_level7_page.dart';
-import '../features/iqra/pages/latihan_suku_kata_level8_page.dart';
-import '../features/iqra/pages/latihan_suku_kata_level9_page.dart';
-import '../features/iqra/pages/latihan_suku_kata_level10_page.dart';
 import '../features/iqra/pages/latihan_suku_kata_menu_page.dart';
 import '../features/iqra/pages/dengarkan_tebak_page.dart';
 
@@ -96,15 +86,6 @@ class AppRoutes {
   static const latihanHarakat = '/latihan-harakat';
   static const latihanSukuKata = '/latihan-suku-kata';
   static const latihanSukuKataMenu = '/latihan-suku-kata-menu';
-  static const latihanSukuKataLevel2 = '/latihan-suku-kata-level2';
-  static const latihanSukuKataLevel3 = '/latihan-suku-kata-level3';
-  static const latihanSukuKataLevel4 = '/latihan-suku-kata-level4';
-  static const latihanSukuKataLevel5 = '/latihan-suku-kata-level5';
-  static const latihanSukuKataLevel6 = '/latihan-suku-kata-level6';
-  static const latihanSukuKataLevel7 = '/latihan-suku-kata-level7';
-  static const latihanSukuKataLevel8 = '/latihan-suku-kata-level8';
-  static const latihanSukuKataLevel9 = '/latihan-suku-kata-level9';
-  static const latihanSukuKataLevel10 = '/latihan-suku-kata-level10';
   static const pengucapan = '/pengucapan';
   static const detailHuruf = '/detail-huruf';
   static const latihanDengar = '/latihan-dengar';
@@ -180,15 +161,6 @@ class AppRoutes {
     latihanHarakat: (_) => const LatihanHarakatPage(),
     latihanSukuKata: (_) => const LatihanSukuKataMenuPage(),
     latihanSukuKataMenu: (_) => const LatihanSukuKataMenuPage(),
-    latihanSukuKataLevel2: (_) => const LatihanSukuKataLevel2Page(),
-    latihanSukuKataLevel3: (_) => const LatihanSukuKataLevel3Page(),
-    latihanSukuKataLevel4: (_) => const LatihanSukuKataLevel4Page(),
-    latihanSukuKataLevel5: (_) => const LatihanSukuKataLevel5Page(),
-    latihanSukuKataLevel6: (_) => const LatihanSukuKataLevel6Page(),
-    latihanSukuKataLevel7: (_) => const LatihanSukuKataLevel7Page(),
-    latihanSukuKataLevel8: (_) => const LatihanSukuKataLevel8Page(),
-    latihanSukuKataLevel9: (_) => const LatihanSukuKataLevel9Page(),
-    latihanSukuKataLevel10: (_) => const LatihanSukuKataLevel10Page(),
     latihanDengar: (_) => const DengarkanTebakPage(),
 
     // Tajwid

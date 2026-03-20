@@ -255,6 +255,7 @@ class MateriHijaiyahPage extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => MateriHurufDetailPage(
+                            lessonId: index + 1,
                             lessonTitle: lesson["title"] as String,
                             hurufList: hurufList,
                           ),
