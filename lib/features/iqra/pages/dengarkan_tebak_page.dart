@@ -1,39 +1,38 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:ui';
+
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_sound/flutter_sound.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:lottie/lottie.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
+
 import '../../../services/progress_service.dart';
 
 class DengarkanTebakPage extends StatefulWidget {
   const DengarkanTebakPage({super.key});
 
   @override
-  _DengarkanTebakPageState createState() => _DengarkanTebakPageState();
+  State<DengarkanTebakPage> createState() => _DengarkanTebakPageState();
 }
 
 class _DengarkanTebakPageState extends State<DengarkanTebakPage> {
+  static const int _totalQuestion = 10;
+
   final FlutterSoundPlayer _player = FlutterSoundPlayer();
-
-  bool _isPlaying = false;
-  bool _challengeMode = true;
-  bool challengeFinished = false;
-
-  int _currentQuestionIndex = 1;
-  int _correctCount = 0;
-
   late ConfettiController _confettiController;
 
-  String _feedback = "";
+  bool _isPlaying = false;
+  bool _lockedAnswer = false;
+  int _currentQuestionIndex = 1;
+  int _correctCount = 0;
+  int _streak = 0;
+  int _bestStreak = 0;
 
-  // ============================================================
-  //  FULL HURUF HIJAIYAH
-  // ============================================================
+  String _feedback = "";
+  String? _selectedOption;
+
   final List<Map<String, String>> audioList = [
     {"audio": "fatah_a.mp3", "arab": "اَ"},
     {"audio": "fatah_ba.mp3", "arab": "بَ"},
@@ -44,7 +43,7 @@ class _DengarkanTebakPageState extends State<DengarkanTebakPage> {
     {"audio": "fatah_ka.mp3", "arab": "خَ"},
     {"audio": "fatah_da.mp3", "arab": "دَ"},
     {"audio": "fatah_dza.mp3", "arab": "ذَ"},
-    {"audio": "fatah_ra.mp3", "arab": "رَ"},
+    {"audio": "fatah_ro.mp3", "arab": "رَ"},
     {"audio": "fatah_za.mp3", "arab": "زَ"},
     {"audio": "fatah_sa.mp3", "arab": "سَ"},
     {"audio": "fatah_sya.mp3", "arab": "شَ"},
@@ -73,252 +72,9 @@ class _DengarkanTebakPageState extends State<DengarkanTebakPage> {
     super.initState();
     _player.openPlayer();
     _confettiController =
-        ConfettiController(duration: const Duration(milliseconds: 900));
+        ConfettiController(duration: const Duration(milliseconds: 800));
     _generateQuestion();
   }
-
-  // ============================================================
-  // Random soal + opsi
-  // ============================================================
-  void _generateQuestion() {
-    final random = Random();
-    _question = audioList[random.nextInt(audioList.length)];
-
-    options = [_question["arab"]!];
-
-    while (options.length < 3) {
-      final pick =
-          audioList[random.nextInt(audioList.length)]["arab"]!;
-      if (!options.contains(pick)) options.add(pick);
-    }
-
-    options.shuffle();
-
-    _feedback = "";
-    setState(() {});
-  }
-
-  // ============================================================
-  // LOAD audio into temp
-  // ============================================================
-  Future<String> loadAsset(String assetPath) async {
-    final bytes = await rootBundle.load(assetPath);
-    final file = File(
-        '${(await getTemporaryDirectory()).path}/${assetPath.split("/").last}');
-    await file.writeAsBytes(bytes.buffer.asUint8List());
-    return file.path;
-  }
-
-  // ============================================================
-  // Play Audio
-  // ============================================================
-  void _playAudio() async {
-    setState(() => _isPlaying = true);
-
-    final path =
-        await loadAsset("assets/audio/huruf/${_question["audio"]}");
-
-    await _player.startPlayer(
-      fromURI: path,
-      whenFinished: () => setState(() => _isPlaying = false),
-    );
-  }
-
-  // ============================================================
-  // CEK JAWABAN → Confetti → XP → Challenge next
-  // ============================================================
-  void _checkAnswer(String selected) async {
-    if (challengeFinished) return; // prevent bug 11/10
-
-    if (selected == _question["arab"]) {
-      _confettiController.play();
-      setState(() => _feedback = "Benar! 🎉");
-      _correctCount++;
-
-      int xp = await ProgressService.getXP();
-      await ProgressService.saveXP(xp + 5);
-
-      // CHALLENGE FINISHED
-      if (_challengeMode && _currentQuestionIndex >= 10) {
-        challengeFinished = true;
-        Future.delayed(const Duration(milliseconds: 900), () {
-          _showResultDialog();
-        });
-        return;
-      }
-
-      _currentQuestionIndex++;
-      Future.delayed(const Duration(milliseconds: 700), () {
-        _generateQuestion();
-      });
-
-    } else {
-      setState(() => _feedback = "Salah 😢");
-    }
-  }
-
-  // ============================================================
-  // SHOW RESULT (Dialog)
-  // ============================================================
-  void _showResultDialog() {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.45),
-      transitionDuration: const Duration(milliseconds: 350),
-      pageBuilder: (_, __, ___) {
-        return const SizedBox.shrink();
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curvedValue = Curves.easeOut.transform(animation.value);
-
-        return Transform.scale(
-          scale: curvedValue,
-          child: Opacity(
-            opacity: curvedValue,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-
-                // =========================================================
-                // MINI CONFETTI
-                // =========================================================
-                ConfettiWidget(
-                  confettiController: _confettiController,
-                  blastDirection: -pi / 2,
-                  maxBlastForce: 12,
-                  minBlastForce: 6,
-                  emissionFrequency: 0.12,
-                  numberOfParticles: 14,
-                  gravity: 0.4,
-                ),
-
-                // =========================================================
-                // MAIN CARD
-                // =========================================================
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(26),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // efek glass
-                    child: Container(
-                      width: MediaQuery.of(context).size.width * 0.82,
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.88), // semi-transparent untuk glass
-                        borderRadius: BorderRadius.circular(26),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.12),
-                            blurRadius: 18,
-                            offset: Offset(0, 6),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // MASCOT (Lottie)
-                          SizedBox(
-                            height: 130,
-                            child: Lottie.asset("assets/lottie/celebrate.json"),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          Text(
-                            "Bagus Sekali!",
-                            style: GoogleFonts.poppins(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          Text(
-                            "Benar: $_correctCount dari 10\n+ ${_correctCount * 5} XP",
-                            style: GoogleFonts.poppins(
-                              fontSize: 17,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // Tombol ULANGI
-                          GestureDetector(
-                            onTap: () {
-                              challengeFinished = false;
-                              _correctCount = 0;
-                              _currentQuestionIndex = 1;
-                              _generateQuestion();
-                              Navigator.pop(context);
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF60A5FA), Color(0xFF2563EB)],
-                                ),
-                                borderRadius: BorderRadius.circular(18),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.blue.withOpacity(0.3),
-                                    blurRadius: 10,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text(
-                                  "Ulangi Tantangan",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 14),
-
-                          // Tombol KEMBALI
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pop(context); // tutup dialog
-                              Navigator.pop(context); // kembali ke halaman sebelumnya
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              child: Text(
-                                "Kembali",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                )
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
 
   @override
   void dispose() {
@@ -327,241 +83,401 @@ class _DengarkanTebakPageState extends State<DengarkanTebakPage> {
     super.dispose();
   }
 
-  // ============================================================
-  // UI
-  // ============================================================
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F8FF),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // =========================================================
-            // BACKGROUND TOP GRADIENT
-            // =========================================================
-            Container(
-              height: 200,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF60A5FA), Color(0xFF2563EB)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
+  void _generateQuestion() {
+    final random = Random();
+    _question = audioList[random.nextInt(audioList.length)];
 
-            // =========================================================
-            // MAIN CONTENT
-            // =========================================================
-            Column(
+    options = [_question["arab"]!];
+    while (options.length < 3) {
+      final pick = audioList[random.nextInt(audioList.length)]["arab"]!;
+      if (!options.contains(pick)) options.add(pick);
+    }
+    options.shuffle();
+
+    setState(() {
+      _feedback = "";
+      _lockedAnswer = false;
+      _selectedOption = null;
+    });
+  }
+
+  Future<String> loadAsset(String assetPath) async {
+    final bytes = await rootBundle.load(assetPath);
+    final file = File(
+      '${(await getTemporaryDirectory()).path}/${assetPath.split("/").last}',
+    );
+    await file.writeAsBytes(bytes.buffer.asUint8List());
+    return file.path;
+  }
+
+  Future<void> _playAudio() async {
+    if (_isPlaying) return;
+    setState(() => _isPlaying = true);
+
+    final path = await loadAsset('assets/audio/huruf/${_question["audio"]}');
+
+    await _player.startPlayer(
+      fromURI: path,
+      whenFinished: () {
+        if (mounted) setState(() => _isPlaying = false);
+      },
+    );
+  }
+
+  Future<void> _checkAnswer(String selected) async {
+    if (_lockedAnswer) return;
+
+    final isCorrect = selected == _question["arab"];
+
+    setState(() {
+      _lockedAnswer = true;
+      _selectedOption = selected;
+      if (isCorrect) {
+        _correctCount++;
+        _streak++;
+        _bestStreak = max(_bestStreak, _streak);
+        _feedback = '✅ Benar!';
+      } else {
+        _streak = 0;
+        _feedback = '❌ Salah';
+      }
+    });
+
+    if (isCorrect) {
+      _confettiController.play();
+      final xp = await ProgressService.getXP();
+      await ProgressService.saveXP(xp + 5);
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          duration: const Duration(milliseconds: 850),
+          backgroundColor: isCorrect ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
+          content: Text(
+            isCorrect
+                ? 'Mantap! +5 XP | Streak: $_streak'
+                : 'Jawaban yang benar: ${_question["arab"]}',
+            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+        ),
+      );
+
+    await Future.delayed(const Duration(milliseconds: 760));
+    if (!mounted) return;
+
+    if (_currentQuestionIndex >= _totalQuestion) {
+      _showResultDialog();
+      return;
+    }
+
+    setState(() => _currentQuestionIndex++);
+    _generateQuestion();
+  }
+
+  void _showResultDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        final percent = ((_correctCount / _totalQuestion) * 100).round();
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // ===========================================
-                // MASCOT
-                // ===========================================
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Center(
-                    child: Image.asset(
-                      "assets/images/mascot.png",
-                      height: 100,
-                    ),
+                Text(
+                  _correctCount >= 7 ? 'Keren! Pendengaran Tajam 👂' : 'Bagus, lanjut latihan ya! ✨',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF2F9E6E),
                   ),
+                  textAlign: TextAlign.center,
                 ),
-
-                const SizedBox(height: 12),
-
-                // ===========================================
-                // PROGRESS BAR
-                // ===========================================
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 22),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Soal $_currentQuestionIndex dari 10",
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: LinearProgressIndicator(
-                          value: _currentQuestionIndex / 10,
-                          minHeight: 10,
-                          backgroundColor: Colors.white.withOpacity(0.3),
-                          color: Colors.greenAccent,
-                        ),
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 10),
+                Text(
+                  'Benar: $_correctCount/$_totalQuestion\nSkor: $percent%\nBest streak: $_bestStreak',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 15),
                 ),
-
-                const SizedBox(height: 28),
-
-                // ===========================================
-                // WHITE CARD BODY
-                // ===========================================
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(32),
-                        topRight: Radius.circular(32),
+                const SizedBox(height: 16),
+                Text(
+                  'Saran: gunakan headset + ulang 2x audio sebelum menjawab untuk naikkan akurasi.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                        },
+                        child: Text('Kembali', style: GoogleFonts.poppins()),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 14,
-                          offset: Offset(0, -3),
-                        )
-                      ],
                     ),
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        // ===========================================
-                        // PLAY BUTTON — DOULINGO STYLE
-                        // ===========================================
-                        GestureDetector(
-                          onTap: _isPlaying ? null : _playAudio,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 28),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: _isPlaying
-                                    ? [Color(0xFF4ADE80), Color(0xFF22C55E)]
-                                    : [Color(0xFF60A5FA), Color(0xFF2563EB)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(28),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.blue.shade200,
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _isPlaying
-                                      ? Icons.volume_up_rounded
-                                      : Icons.play_arrow_rounded,
-                                  color: Colors.white,
-                                  size: 40,
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  _isPlaying ? "Memutar..." : "Dengarkan",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF42C88A),
                         ),
-
-                        const SizedBox(height: 35),
-
-                        // ===========================================
-                        // MULTIPLE CHOICE CENTERED
-                        // ===========================================
-                        Center(
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 18,
-                            runSpacing: 18,
-                            children: options.map((opt) {
-                              return GestureDetector(
-                                onTap: () => _checkAnswer(opt),
-                                child: AnimatedContainer(
-                                  duration:
-                                      const Duration(milliseconds: 250),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 28, vertical: 20),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(
-                                      color: Colors.black12,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.07),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    opt,
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-
-                        const SizedBox(height: 22),
-
-                        // ===========================================
-                        // FEEDBACK TEXT
-                        // ===========================================
-                        Text(
-                          _feedback,
+                        onPressed: () {
+                          Navigator.pop(context);
+                          setState(() {
+                            _currentQuestionIndex = 1;
+                            _correctCount = 0;
+                            _streak = 0;
+                            _bestStreak = 0;
+                          });
+                          _generateQuestion();
+                        },
+                        child: Text(
+                          'Main Lagi',
                           style: GoogleFonts.poppins(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: _feedback.contains("Benar")
-                                ? Colors.green
-                                : Colors.red,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
+          ),
+        );
+      },
+    );
+  }
 
-            // =========================================================
-            // CONFETTI TOP CENTER
-            // =========================================================
+  Widget _buildOption(String opt) {
+    final isCorrect = opt == _question["arab"];
+    final isSelected = opt == _selectedOption;
+
+    Color bg = const Color(0xFFE8FFF0);
+    Color border = const Color(0xFF50D1A0);
+    Color text = const Color(0xFF42C88A);
+    IconData? icon;
+
+    if (_lockedAnswer) {
+      if (isCorrect) {
+        bg = const Color(0xFFD9F8E5);
+        border = const Color(0xFF1E915B);
+        text = const Color(0xFF1E915B);
+        icon = Icons.check_circle_rounded;
+      } else if (isSelected) {
+        bg = const Color(0xFFFFE2E2);
+        border = const Color(0xFFD84343);
+        text = const Color(0xFFD84343);
+        icon = Icons.cancel_rounded;
+      } else {
+        bg = Colors.white.withOpacity(0.75);
+        border = Colors.grey.shade300;
+        text = Colors.grey.shade600;
+      }
+    }
+
+    return GestureDetector(
+      onTap: () => _checkAnswer(opt),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: border, width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              opt,
+              style: GoogleFonts.poppins(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: text,
+              ),
+            ),
+            if (icon != null) ...[
+              const SizedBox(width: 8),
+              Icon(icon, color: text, size: 20),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = _currentQuestionIndex / _totalQuestion;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Dengarkan & Tebak', style: GoogleFonts.poppins()),
+        backgroundColor: const Color(0xFF50D1A0),
+      ),
+      body: SafeArea(
+        child: Stack(
+          children: [
             Align(
               alignment: Alignment.topCenter,
               child: ConfettiWidget(
                 confettiController: _confettiController,
                 blastDirection: -pi / 2,
-                gravity: 0.4,
-                colors: const [
-                  Colors.green,
-                  Colors.blue,
-                  Colors.orange,
-                  Colors.red
+                gravity: 0.35,
+                colors: const [Colors.green, Colors.blue, Colors.orange],
+                emissionFrequency: 0.1,
+                numberOfParticles: 12,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 18, 22, 16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 8,
+                          borderRadius: BorderRadius.circular(16),
+                          color: const Color(0xFF42C88A),
+                          backgroundColor: Colors.grey.shade200,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '$_currentQuestionIndex/$_totalQuestion',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Streak: $_streak 🔥',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF2F9E6E),
+                        ),
+                      ),
+                      Text(
+                        'Best: $_bestStreak',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  GestureDetector(
+                    onTap: _playAudio,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      decoration: BoxDecoration(
+                        color: _isPlaying
+                            ? const Color(0xFFD9F8E5)
+                            : const Color(0xFFEAF9F0),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFF42C88A).withOpacity(0.4),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _isPlaying ? Icons.graphic_eq_rounded : Icons.volume_up_rounded,
+                            color: const Color(0xFF2F9E6E),
+                            size: 30,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            _isPlaying ? 'Memutar audio...' : 'Dengarkan suara',
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF2F9E6E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _feedback,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: _feedback.contains('Benar')
+                          ? const Color(0xFF2E7D32)
+                          : const Color(0xFFC62828),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(14, 18, 14, 14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        image: const DecorationImage(
+                          image: AssetImage('assets/images/background-mengaji.png'),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          color: Colors.white.withOpacity(0.82),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Tebak huruf berdasarkan audio',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ...options
+                                .map((opt) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: _buildOption(opt),
+                                    ))
+                                .toList(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
-                emissionFrequency: 0.15,
-                numberOfParticles: 14,
               ),
             ),
           ],
@@ -569,5 +485,4 @@ class _DengarkanTebakPageState extends State<DengarkanTebakPage> {
       ),
     );
   }
-
 }
