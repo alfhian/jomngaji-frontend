@@ -31,51 +31,49 @@ class AppBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF168A66), Color(0xFF33B27F), Color(0xFF4BD09A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.12),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFAFCFB),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: const Color(0xFFE6ECE9),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(26),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: currentIndex,
+          onDestinationSelected: (index) => _onTap(context, index),
           backgroundColor: Colors.transparent,
           elevation: 0,
-          currentIndex: currentIndex,
-          onTap: (index) => _onTap(context, index),
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white70,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          indicatorColor: const Color(0x1F168A66),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
               label: 'Home',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_rounded),
+            NavigationDestination(
+              icon: Icon(Icons.menu_book_outlined),
+              selectedIcon: Icon(Icons.menu_book_rounded),
               label: 'Tadarus',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.auto_stories_rounded),
+            NavigationDestination(
+              icon: Icon(Icons.auto_stories_outlined),
+              selectedIcon: Icon(Icons.auto_stories_rounded),
               label: 'Doa',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded),
               label: 'Profile',
             ),
           ],

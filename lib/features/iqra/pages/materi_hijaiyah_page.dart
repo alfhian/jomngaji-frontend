@@ -1,54 +1,88 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../../services/hijaiyah_service.dart';
 import '../data/hijaiyah_data.dart';
 import 'materi_huruf_detail_page.dart';
 
-class MateriHijaiyahPage extends StatelessWidget {
+class MateriHijaiyahPage extends StatefulWidget {
   const MateriHijaiyahPage({super.key});
 
-  // =========================================================
-  // 📌 14 PELAJARAN MAPPING
-  // =========================================================
-  List<Map<String, dynamic>> get materiHijaiyahLessons => [
-        {"title": "Huruf Alif dan Ba", "list": [0, 1]},
-        {"title": "Huruf Ta dan Tsa", "list": [2, 3]},
-        {"title": "Huruf Jim, Ha, Kha", "list": [4, 5, 6]},
-        {"title": "Huruf Dal dan Dzal", "list": [7, 8]},
-        {"title": "Huruf Ra dan Zai", "list": [9, 10]},
-        {"title": "Huruf Sin dan Syin", "list": [11, 12]},
-        {"title": "Huruf Shad dan Dhad", "list": [13, 14]},
-        {"title": "Huruf Tha dan Zha", "list": [15, 16]},
-        {"title": "Huruf Ain dan Ghain", "list": [17, 18]},
-        {"title": "Huruf Fa dan Qaf", "list": [19, 20]},
-        {"title": "Huruf Kaf dan Lam", "list": [21, 22]},
-        {"title": "Huruf Mim dan Nun", "list": [23, 24]},
-        {"title": "Huruf Ha' dan Wau", "list": [25, 26]},
-        {"title": "Huruf Ya", "list": [27]},
-      ];
+  @override
+  State<MateriHijaiyahPage> createState() => _MateriHijaiyahPageState();
+}
+
+class _MateriHijaiyahPageState extends State<MateriHijaiyahPage> {
+  bool _loading = true;
+  double _progress = 0;
+  List<HijaiyahLesson> _lessons = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLessons();
+  }
+
+  Future<void> _loadLessons() async {
+    setState(() => _loading = true);
+    try {
+      final payload = await HijaiyahService.getLessons();
+      if (!mounted) return;
+      setState(() {
+        _lessons = payload.lessons;
+        _progress = payload.progress;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengambil materi hijaiyah: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  List<HijaiyahData> _lessonLettersByIndex(int lessonIndex) {
+    if (_lessons.isEmpty) return const [];
+
+    final safeIndex = lessonIndex.clamp(0, _lessons.length - 1);
+    final start = _lessons
+        .take(safeIndex)
+        .fold<int>(0, (sum, lesson) => sum + lesson.totalLetters);
+
+    final length = _lessons[safeIndex].totalLetters;
+
+    if (start >= hijaiyahList.length) return const [];
+
+    final end = (start + length).clamp(start, hijaiyahList.length);
+    return hijaiyahList.sublist(start, end);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true, // appbar menyatu dengan hero
+      extendBodyBehindAppBar: true,
       appBar: null,
-      body: ListView(
-        children: [
-          _heroSection(context),
-          const SizedBox(height: 20),
-          _descriptionSection(),
-          const SizedBox(height: 22),
-          _progressSection(),
-          const SizedBox(height: 25),
-          _lessonList(context),
-          const SizedBox(height: 30),
-        ],
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadLessons,
+              child: ListView(
+                children: [
+                  _heroSection(context),
+                  const SizedBox(height: 20),
+                  _descriptionSection(),
+                  const SizedBox(height: 22),
+                  _progressSection(),
+                  const SizedBox(height: 25),
+                  _lessonList(context),
+                  const SizedBox(height: 30),
+                ],
+              ),
+            ),
     );
   }
 
-  // =========================================================
-  // 📌 HERO SECTION
-  // =========================================================
   Widget _heroSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -62,7 +96,6 @@ class MateriHijaiyahPage extends StatelessWidget {
         ),
       ),
       child: Container(
-        // overlay gradient lembut untuk readability
         decoration: BoxDecoration(
           borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(32),
@@ -81,7 +114,6 @@ class MateriHijaiyahPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ---- BACK BUTTON MODERN (GLASS EFFECT) ----
             GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
@@ -99,10 +131,7 @@ class MateriHijaiyahPage extends StatelessWidget {
                 child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
               ),
             ),
-
             const SizedBox(height: 28),
-
-            // ---- LABEL (small heading) ----
             Text(
               "Materi 1",
               style: GoogleFonts.poppins(
@@ -111,10 +140,7 @@ class MateriHijaiyahPage extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-
             const SizedBox(height: 4),
-
-            // ---- BIG TITLE ----
             Text(
               "Belajar Huruf\nHijaiyah",
               style: GoogleFonts.poppins(
@@ -124,10 +150,7 @@ class MateriHijaiyahPage extends StatelessWidget {
                 fontWeight: FontWeight.w800,
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // ---- BADGE: LEVEL ----
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               decoration: BoxDecoration(
@@ -154,10 +177,6 @@ class MateriHijaiyahPage extends StatelessWidget {
     );
   }
 
-
-  // =========================================================
-  // 📌 Description
-  // =========================================================
   Widget _descriptionSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -173,7 +192,7 @@ class MateriHijaiyahPage extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            "14 Pelajaran",
+            "${_lessons.length} Pelajaran",
             style: GoogleFonts.poppins(
               fontSize: 13,
               color: Colors.black54,
@@ -184,9 +203,6 @@ class MateriHijaiyahPage extends StatelessWidget {
     );
   }
 
-  // =========================================================
-  // 📌 Progress Section
-  // =========================================================
   Widget _progressSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -204,7 +220,7 @@ class MateriHijaiyahPage extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              value: 0.0, // future: ganti dengan XP / Level
+              value: _progress,
               backgroundColor: Colors.grey.shade300,
               minHeight: 8,
               color: const Color(0xFF50D1A0),
@@ -212,7 +228,7 @@ class MateriHijaiyahPage extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            "0% selesai",
+            "${(_progress * 100).toInt()}% selesai",
             style: GoogleFonts.poppins(
               fontSize: 12,
               color: Colors.black54,
@@ -223,61 +239,59 @@ class MateriHijaiyahPage extends StatelessWidget {
     );
   }
 
-  // =========================================================
-  // 📌 Lesson List
-  // =========================================================
   Widget _lessonList(BuildContext context) {
+    if (_lessons.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Text(
+          'Belum ada materi hijaiyah dari server.',
+          style: GoogleFonts.poppins(fontSize: 14),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
-        children: List.generate(
-          materiHijaiyahLessons.length,
-          (index) {
-            final lesson = materiHijaiyahLessons[index];
-            final unlock = index == 0; // sementara hanya pelajaran 1 yg terbuka
+        children: List.generate(_lessons.length, (index) {
+          final lesson = _lessons[index];
+          final unlocked = lesson.isUnlocked;
+          final letters = _lessonLettersByIndex(index);
 
-            return _lessonItem(
-              context,
-              number: index + 1,
-              title: lesson["title"] as String,
-              unlocked: unlock,
-              onTap: unlock
-                  ? () {
-                      // ✅ CAST ke List<int> dulu
-                      final List<int> idxList =
-                          List<int>.from(lesson["list"] as List);
-
-                      final List<HijaiyahData> hurufList = idxList
-                          .map((i) => hijaiyahList[i])
-                          .toList();
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => MateriHurufDetailPage(
-                            lessonId: index + 1,
-                            lessonTitle: lesson["title"] as String,
-                            hurufList: hurufList,
-                          ),
+          return _lessonItem(
+            context,
+            number: index + 1,
+            title: lesson.title,
+            subtitle: lesson.description,
+            unlocked: unlocked,
+            isPremium: lesson.isPremium,
+            onTap: unlocked
+                ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MateriHurufDetailPage(
+                          lessonId: lesson.id,
+                          lessonTitle: lesson.title,
+                          hurufList: letters,
                         ),
-                      );
-                    }
-                  : null,
-            );
-          },
-        ),
+                      ),
+                    ).then((_) => _loadLessons());
+                  }
+                : null,
+          );
+        }),
       ),
     );
   }
 
-  // =========================================================
-  // 📌 Single Lesson Card
-  // =========================================================
   Widget _lessonItem(
     BuildContext context, {
     required int number,
     required String title,
+    required String subtitle,
     required bool unlocked,
+    required bool isPremium,
     VoidCallback? onTap,
   }) {
     return GestureDetector(
@@ -300,7 +314,6 @@ class MateriHijaiyahPage extends StatelessWidget {
               color: unlocked ? const Color(0xFF50D1A0) : Colors.grey,
             ),
             const SizedBox(width: 16),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,10 +333,36 @@ class MateriHijaiyahPage extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
+                  if (subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-
+            if (isPremium)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  'PRO',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    color: Colors.orange.shade800,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             if (unlocked)
               Container(
                 padding: const EdgeInsets.all(8),
@@ -331,8 +370,7 @@ class MateriHijaiyahPage extends StatelessWidget {
                   color: Color(0xFF50D1A0),
                   shape: BoxShape.circle,
                 ),
-                child:
-                    const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                child: const Icon(Icons.play_arrow_rounded, color: Colors.white),
               ),
           ],
         ),

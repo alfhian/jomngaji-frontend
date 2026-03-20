@@ -6,7 +6,6 @@ import 'package:flutter_sound/flutter_sound.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jomngaji/models/evaluation_result.dart';
 import 'package:jomngaji/services/evaluation_api.dart';
-import 'package:jomngaji/services/progress_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -340,8 +339,20 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
       if (score >= 50 && _currentIndex < widget.hurufList.length - 1) {
         setState(() => _currentIndex++);
       } else if (_currentIndex == widget.hurufList.length - 1 && score >= 50) {
-        // unlock lesson terakhir
-        ProgressService.saveLessonScore(1, score.toDouble());
+        _finishLessonAndBack();
+      }
+    });
+  }
+
+
+  void _finishLessonAndBack() {
+    if (!mounted) return;
+
+    Navigator.of(context).pop();
+    Future.microtask(() {
+      if (!mounted) return;
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
       }
     });
   }
