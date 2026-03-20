@@ -1,58 +1,181 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../features/auth/services/auth_service.dart';
+
+class SukuKataLevel {
+  final int id;
+  final String title;
+  final String description;
+  final int totalQuestions;
+  final int orderIndex;
+  final bool isPremium;
+  final bool isUnlocked;
+  final int completedQuestions;
+  final double averageScore;
+
+  const SukuKataLevel({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.totalQuestions,
+    required this.orderIndex,
+    required this.isPremium,
+    required this.isUnlocked,
+    required this.completedQuestions,
+    required this.averageScore,
+  });
+
+  factory SukuKataLevel.fromJson(Map<String, dynamic> json) {
+    int _toInt(dynamic v, {int fallback = 0}) => int.tryParse('${v ?? ''}') ?? fallback;
+    double _toDouble(dynamic v, {double fallback = 0}) => double.tryParse('${v ?? ''}') ?? fallback;
+
+    final id = _toInt(json['level_id'], fallback: _toInt(json['id']));
+
+    return SukuKataLevel(
+      id: id,
+      title: (json['title'] ?? 'Level $id').toString(),
+      description: (json['description'] ?? '').toString(),
+      totalQuestions: _toInt(json['total_questions'], fallback: 5),
+      orderIndex: _toInt(json['order_index'], fallback: id),
+      isPremium: _toInt(json['is_premium']) == 1 || json['is_premium'] == true,
+      isUnlocked: json['unlocked'] == true || json['is_unlocked'] == true || _toInt(json['unlocked']) == 1,
+      completedQuestions: _toInt(json['completed_questions']),
+      averageScore: _toDouble(json['average_score']),
+    );
+  }
+}
+
+class SukuKataLevelsPayload {
+  final double progressPercentage;
+  final List<SukuKataLevel> levels;
+
+  const SukuKataLevelsPayload({
+    required this.progressPercentage,
+    required this.levels,
+  });
+}
+
+class SukuKataQuestion {
+  final int id;
+  final int levelId;
+  final String huruf;
+  final String arabic;
+  final String latin;
+
+  const SukuKataQuestion({
+    required this.id,
+    required this.levelId,
+    required this.huruf,
+    required this.arabic,
+    required this.latin,
+  });
+
+  factory SukuKataQuestion.fromJson(Map<String, dynamic> json, {int levelIdFallback = 0}) {
+    int _toInt(dynamic v, {int fallback = 0}) => int.tryParse('${v ?? ''}') ?? fallback;
+
+    final arabic = (json['arabic'] ?? '').toString();
+
+    return SukuKataQuestion(
+      id: _toInt(json['id']),
+      levelId: _toInt(json['level_id'], fallback: levelIdFallback),
+      huruf: (json['huruf'] ?? arabic).toString(),
+      arabic: arabic,
+      latin: (json['latin'] ?? '').toString().toUpperCase(),
+    );
+  }
+}
 
 class SukuKataService {
-  static const int maxLevels = 10;
-  static const int passingScore = 50;
+  static const String baseUrl = 'http://192.168.1.141:4000';
 
-  // KEY BUILDER
-  static String _scoreKey(int level) => "sk_level_${level}_score";
-  static String _unlockKey(int level) => "sk_level_${level}_unlocked";
+  static Future<SukuKataLevelsPayload> getLevels() async {
+    final headers = await AuthService.authHeaders();
 
-  // Level 1 selalu unlocked
-  static Future<bool> isLevelUnlocked(int level) async {
-    final prefs = await SharedPreferences.getInstance();
+    final response = await http.get(
+      Uri.parse('$baseUrl/suku-kata/levels'),
+      headers: headers,
+    );
 
-    // level 1 harus selalu unlocked
-    if (level == 1) return true;
-
-    return prefs.getBool("level_${level}_unlocked") ?? false;
-    print(prefs.getBool("level_${level}_unlocked"));
-  }
-
-
-  static Future<double> getLevelScore(int level) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getDouble(_scoreKey(level)) ?? 0.0;
-  }
-
-  static Future<void> saveLevelScore(int level, double score) async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    await prefs.setDouble("level_${level}_score", score);
-
-    // UNLOCK NEXT LEVEL (score must be ≥ 50)
-    if (score >= 50 && level < 10) {
-      prefs.setBool("level_${level+1}_unlocked", true);
-    }
-  }
-
-  static Future<void> resetAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    for (int i = 1; i <= maxLevels; i++) {
-      await prefs.remove(_scoreKey(i));
-      await prefs.remove(_unlockKey(i));
-    }
-  }
-
-  static Future<int> getUnlockedLevelCount(int totalLevels) async {
-    final prefs = await SharedPreferences.getInstance();
-    int count = 1; // level 1 selalu unlocked
-
-    for (int i = 2; i <= totalLevels; i++) {
-      bool unlocked = prefs.getBool("suku_level_${i}_unlocked") ?? false;
-      if (unlocked) count++;
+    if (response.statusCode != 200) {
+      throw Exception('Gagal mengambil level suku kata: ${response.body}');
     }
 
-    return count;
+    final body = jsonDecode(response.body);
+    final progress = body is Map<String, dynamic>
+        ? double.tryParse('${body['progress_percentage'] ?? 0}') ?? 0
+        : 0.0;
+
+    final raw = body is List
+        ? body
+        : (body is Map<String, dynamic>
+            ? (body['levels'] ?? body['data'] ?? const [])
+            : const []);
+
+    if (raw is! List) {
+      return const SukuKataLevelsPayload(progressPercentage: 0, levels: []);
+    }
+
+    final levels = raw
+        .whereType<Map<String, dynamic>>()
+        .map(SukuKataLevel.fromJson)
+        .toList()
+      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+
+    return SukuKataLevelsPayload(
+      progressPercentage: progress,
+      levels: levels,
+    );
+  }
+
+  static Future<List<SukuKataQuestion>> getLevelQuestions(int levelId) async {
+    final headers = await AuthService.authHeaders();
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/suku-kata/levels/$levelId/questions'),
+      headers: headers,
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal mengambil soal level: ${response.body}');
+    }
+
+    final body = jsonDecode(response.body);
+    final raw = body is List
+        ? body
+        : (body is Map<String, dynamic>
+            ? (body['questions'] ?? body['data'] ?? const [])
+            : const []);
+
+    if (raw is! List) return [];
+
+    return raw
+        .whereType<Map<String, dynamic>>()
+        .map((e) => SukuKataQuestion.fromJson(e, levelIdFallback: levelId))
+        .toList();
+  }
+
+  static Future<Map<String, dynamic>> submitLevelScore({
+    required int levelId,
+    required double score,
+  }) async {
+    final headers = await AuthService.authHeaders(
+      extra: {'Content-Type': 'application/json'},
+    );
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/suku-kata/levels/$levelId/submit'),
+      headers: headers,
+      body: jsonEncode({'score': score}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal submit score: ${response.body}');
+    }
+
+    final body = jsonDecode(response.body);
+    if (body is Map<String, dynamic>) return body;
+    return {'data': body};
   }
 }

@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/widgets/custom_gradient_appbar.dart';
+import '../../auth/services/auth_service.dart';
 import '../data/quran_loader.dart';
 import '../../../models/surah.dart';
 import 'evaluate_page.dart';
@@ -76,12 +76,13 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
   }
 
   // ===================== 🔥 BACKEND PROGRESS =====================
-  Future<int> _fetchCompletedAyahCount(int userId, int surahNumber) async {
+  Future<int> _fetchCompletedAyahCount(int surahNumber) async {
+    final headers = await AuthService.authHeaders();
     final res = await http.get(
       Uri.parse(
-        'http://192.168.1.141:4000/tadarus/progress'
-        '?user_id=$userId&surah=$surahNumber',
+        'http://192.168.1.141:4000/tadarus/progress?surah=$surahNumber',
       ),
+      headers: headers,
     );
 
     if (res.statusCode != 200) return 0;
@@ -93,11 +94,7 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
   Future<void> _loadSurahAndProgress() async {
     final s = await loadSurahDetail(widget.surah.number);
 
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getInt('userId') ?? 0;
-
-    final completed =
-        await _fetchCompletedAyahCount(userId, s.number);
+    final completed = await _fetchCompletedAyahCount(s.number);
 
     final index =
         completed.clamp(0, s.ayahs.length - 1);

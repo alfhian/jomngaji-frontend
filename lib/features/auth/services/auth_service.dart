@@ -3,54 +3,114 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const baseUrl = "http://192.168.1.141:4000"; // ganti dengan URL backend FastAPI kamu
+  static const baseUrl = "http://192.168.1.141:4000";
+
+  static const _keyIsLoggedIn = 'isLoggedIn';
+  static const _keyAccessToken = 'access_token';
+  static const _keyUserId = 'userId';
+  static const _keyName = 'name';
 
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('isLoggedIn') ?? false;
+    final hasToken = (prefs.getString(_keyAccessToken) ?? '').isNotEmpty;
+    return (prefs.getBool(_keyIsLoggedIn) ?? false) && hasToken;
   }
 
   static Future<int?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('userId');
+    return prefs.getInt(_keyUserId);
   }
 
+  static Future<String?> getAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyAccessToken);
+  }
+
+  static Future<Map<String, String>> authHeaders({
+    Map<String, String>? extra,
+  }) async {
+    final token = await getAccessToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('User belum login (token tidak ditemukan)');
+    }
+
+    return {
+      'Authorization': 'Bearer $token',
+      ...?extra,
+    };
+  }
 
   static Future<void> login(String email, String password) async {
     final res = await http.post(
-      Uri.parse("$baseUrl/login"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"email": email, "password": password}),
+      Uri.parse('$baseUrl/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
     );
 
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', true);
-      await prefs.setInt('userId', data['userId']);
-      await prefs.setString('name', data['name']);
-    } else {
-      throw Exception("Login gagal: ${res.body}");
+    if (res.statusCode != 200) {
+      throw Exception('Login gagal: ${res.body}');
+    }
+
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    await _saveSessionFromResponse(data);
+  }
+
+  static Future<void> loginWithGoogle(String idToken) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/auth/google'),
+      body: {'token': idToken},
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Login Google gagal: ${res.body}');
+    }
+
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    await _saveSessionFromResponse(data);
+  }
+
+  static Future<void> _saveSessionFromResponse(Map<String, dynamic> data) async {
+    final accessToken = data['access_token']?.toString();
+    final userIdRaw = data['userId'] ?? data['user_id'] ?? data['id'];
+    final name = data['name']?.toString();
+
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('Response login tidak mengandung access_token');
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyIsLoggedIn, true);
+    await prefs.setString(_keyAccessToken, accessToken);
+
+    if (userIdRaw != null) {
+      final parsed = int.tryParse(userIdRaw.toString());
+      if (parsed != null) {
+        await prefs.setInt(_keyUserId, parsed);
+      }
+    }
+
+    if (name != null && name.isNotEmpty) {
+      await prefs.setString(_keyName, name);
     }
   }
 
   static Future<void> register(String email, String password, String name) async {
     final res = await http.post(
-      Uri.parse("$baseUrl/register"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"email": email, "password": password, "name": name}),
+      Uri.parse('$baseUrl/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password, 'name': name}),
     );
 
-    if (res.statusCode == 200) {
-      // Registrasi berhasil, bisa langsung login atau arahkan ke halaman login
-    } else {
-      throw Exception("Registrasi gagal: ${res.body}");
+    if (res.statusCode != 200) {
+      throw Exception('Registrasi gagal: ${res.body}');
     }
   }
 
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false);
-    await prefs.remove('userId');
+    await prefs.setBool(_keyIsLoggedIn, false);
+    await prefs.remove(_keyAccessToken);
+    await prefs.remove(_keyUserId);
+    await prefs.remove(_keyName);
   }
 }
