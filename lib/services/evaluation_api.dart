@@ -1,9 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import '../../features/auth/services/auth_service.dart';
+import '../features/auth/services/auth_service.dart';
 
 class EvaluationApi {
   final String baseUrl;
@@ -12,47 +11,39 @@ class EvaluationApi {
   EvaluationApi(this.baseUrl, {http.Client? client})
       : _client = client ?? http.Client();
 
-  // ======================================================
-  // INTERNAL HELPER
-  // ======================================================
   Exception _error(int status, String body) {
-    return Exception("[$status] $body");
+    return Exception('[$status] $body');
   }
 
   Map<String, dynamic> _decode(String body) {
     return jsonDecode(body) as Map<String, dynamic>;
   }
 
-  // ======================================================
-  // 🔥 HIJAIYAH / GENERAL AUDIO EVALUATION
-  // ======================================================
+  Future<Map<String, String>> _authHeaders() async {
+    return AuthService.authHeaders();
+  }
+
   Future<Map<String, dynamic>> evaluateAudio({
     required String audioPath,
     required String targetText,
-    required int lessonId, // 🔥 PENTING untuk unlock
+    required int lessonId,
   }) async {
-    final uri = Uri.parse("$baseUrl/evaluate");
+    final uri = Uri.parse('$baseUrl/evaluate');
+    final headers = await _authHeaders();
 
-    final userId = await AuthService.getUserId();
-    if (userId == null) {
-      throw Exception("User belum login");
-    }
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll(headers);
 
-    final request = http.MultipartRequest("POST", uri);
-
-    // ===== FORM DATA (WAJIB)
     request.fields.addAll({
-      "user_id": userId.toString(),
-      "target": targetText,
-      "lesson_id": lessonId.toString(),
+      'target': targetText,
+      'lesson_id': lessonId.toString(),
     });
 
-    // ===== AUDIO FILE
     request.files.add(
       await http.MultipartFile.fromPath(
-        "audio",
+        'audio',
         audioPath,
-        contentType: MediaType("audio", "wav"),
+        contentType: MediaType('audio', 'wav'),
       ),
     );
 
@@ -66,28 +57,25 @@ class EvaluationApi {
     return _decode(response.body);
   }
 
-  // ======================================================
-  // TADARUS AUDIO → TEXT (ASR BASED)
-  // ======================================================
   Future<Map<String, dynamic>> evaluateTadarus({
     required String audioPath,
     required String targetText,
-    String? surah,
+    int? surah,
     int? ayah,
   }) async {
-    final uri = Uri.parse("$baseUrl/evaluate/tadarus");
+    final uri = Uri.parse('$baseUrl/evaluate/tadarus');
 
-    final request = http.MultipartRequest("POST", uri)
-      ..fields["target"] = targetText;
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['target'] = targetText;
 
-    if (surah != null) request.fields["surah"] = surah;
-    if (ayah != null) request.fields["ayah"] = ayah.toString();
+    if (surah != null) request.fields['surah'] = surah.toString();
+    if (ayah != null) request.fields['ayah'] = ayah.toString();
 
     request.files.add(
       await http.MultipartFile.fromPath(
-        "audio",
+        'audio',
         audioPath,
-        contentType: MediaType("audio", "wav"),
+        contentType: MediaType('audio', 'wav'),
       ),
     );
 
@@ -101,41 +89,38 @@ class EvaluationApi {
     return _decode(response.body);
   }
 
-  // ======================================================
-  // 🔥 TADARUS AUDIO → AUDIO (FINAL / PRODUCTION)
-  // ======================================================
   Future<Map<String, dynamic>> evaluateTadarusAudio({
-    required int userId,
-    required String surah,
+    required int surah,
     required int ayah,
     required int totalAyah,
     required String userAudioPath,
     required String referenceAudioPath,
   }) async {
-    final uri = Uri.parse("$baseUrl/evaluate/tadarus/audio");
+    final uri = Uri.parse('$baseUrl/evaluate/tadarus/audio');
+    final headers = await _authHeaders();
 
-    final request = http.MultipartRequest("POST", uri);
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll(headers);
 
     request.fields.addAll({
-      "user_id": userId.toString(),
-      "surah": surah,
-      "ayah": ayah.toString(),
-      "total_ayah": totalAyah.toString(),
+      'surah': surah.toString(),
+      'ayah': ayah.toString(),
+      'total_ayah': totalAyah.toString(),
     });
 
     request.files.add(
       await http.MultipartFile.fromPath(
-        "user_audio",
+        'user_audio',
         userAudioPath,
-        contentType: MediaType("audio", "aac"),
+        contentType: MediaType('audio', 'aac'),
       ),
     );
 
     request.files.add(
       await http.MultipartFile.fromPath(
-        "reference_audio",
+        'reference_audio',
         referenceAudioPath,
-        contentType: MediaType("audio", "mp3"),
+        contentType: MediaType('audio', 'mp3'),
       ),
     );
 
@@ -149,9 +134,6 @@ class EvaluationApi {
     return _decode(response.body);
   }
 
-  // ======================================================
-  // CLEANUP
-  // ======================================================
   void dispose() {
     _client.close();
   }

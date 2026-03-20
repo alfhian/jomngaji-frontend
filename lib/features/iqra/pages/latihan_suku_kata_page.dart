@@ -1,11 +1,17 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../../services/suku_kata_service.dart';
 
 class LatihanSukuKataPage extends StatefulWidget {
-  final int level; // misal level 1, level 2 dll
-  const LatihanSukuKataPage({super.key, this.level = 1});
+  final SukuKataLevel level;
+
+  const LatihanSukuKataPage({
+    super.key,
+    required this.level,
+  });
 
   @override
   State<LatihanSukuKataPage> createState() => _LatihanSukuKataPageState();
@@ -13,46 +19,21 @@ class LatihanSukuKataPage extends StatefulWidget {
 
 class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
     with TickerProviderStateMixin {
+  static const int _maxQuestions = 5;
 
-  // -----------------------------
-  // DATA SUKU KATA PER LEVEL
-  // -----------------------------
-  final Map<int, Map<String, String>> levelData = {
-    1: {
-      "BA": "بَ",
-      "BI": "بِ",
-      "BU": "بُ",
-    },
-    2: {
-      "TA": "تَ",
-      "TI": "تِ",
-      "TU": "تُ",
-      "FA": "فَ",
-      "FI": "فِ",
-      "FU": "فُ",
-    },
-  };
+  bool _loading = true;
+  List<SukuKataQuestion> _questions = [];
+  List<SukuKataQuestion> _sessionQuestions = [];
 
-  late Map<String, String> currentSet;
+  int _questionIndex = 0;
+  int _correctCount = 0;
 
-  late String currentLatin;
-  late String currentSyllable;
-
-  int questionIndex = 1; // 1 → 5
-  int correctCount = 0;
-
-  // -----------------------------
-  // ANIMATION CONTROLLERS
-  // -----------------------------
   late AnimationController correctAnim;
   late AnimationController wrongAnim;
 
   @override
   void initState() {
     super.initState();
-
-    // load set level
-    currentSet = levelData[widget.level]!;
 
     correctAnim = AnimationController(
       vsync: this,
@@ -68,7 +49,7 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
       upperBound: 1.0,
     );
 
-    generateQuestion();
+    _loadQuestions();
   }
 
   @override
@@ -78,72 +59,85 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
     super.dispose();
   }
 
-  // -----------------------------
-  // GENERATE RANDOM QUESTION
-  // -----------------------------
-  void generateQuestion() {
-    final keys = currentSet.keys.toList();
-    final random = Random();
-
-    currentLatin = keys[random.nextInt(keys.length)];
-    currentSyllable = currentSet[currentLatin]!;
-
-    setState(() {});
+  Future<void> _loadQuestions() async {
+    setState(() => _loading = true);
+    try {
+      final questions = await SukuKataService.getLevelQuestions(widget.level.id);
+      questions.shuffle();
+      setState(() {
+        _questions = questions;
+        _sessionQuestions =
+            questions.take(min(_maxQuestions, questions.length)).toList();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengambil soal: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
-  // -----------------------------
-  // CEK JAWABAN
-  // -----------------------------
-  void checkAnswer(String answer) async {
-    final bool benar = answer == currentLatin;
+  List<String> _optionsFor(SukuKataQuestion question) {
+    final random = Random();
+    final pool = _questions.map((e) => e.latin).toSet().toList();
+    pool.remove(question.latin);
+    pool.shuffle(random);
+
+    final options = <String>[question.latin, ...pool.take(2)];
+    options.shuffle(random);
+    return options;
+  }
+
+  Future<void> _checkAnswer(String answer) async {
+    final current = _sessionQuestions[_questionIndex];
+    final benar = answer.toUpperCase() == current.latin.toUpperCase();
 
     if (benar) {
+      _correctCount++;
       correctAnim.forward(from: 0);
-      correctCount++;
     } else {
       wrongAnim.forward(from: 0);
     }
 
     await Future.delayed(const Duration(milliseconds: 600));
 
-    if (questionIndex == 5) {
-      finishLevel();
+    if (_questionIndex >= _sessionQuestions.length - 1) {
+      await _finishLevel();
       return;
     }
 
-    setState(() {
-      questionIndex++;
-    });
-
-    generateQuestion();
+    setState(() => _questionIndex++);
   }
 
-  // -----------------------------
-  // FINISH SESSION
-  // -----------------------------
-  void finishLevel() async {
-    double scorePercent = (correctCount / 5) * 100;
+  Future<void> _finishLevel() async {
+    final total = _sessionQuestions.length;
+    final scorePercent = total == 0 ? 0.0 : (_correctCount / total) * 100;
+    final xpGain = _correctCount * 5;
 
-    // Save score
-    await SukuKataService.saveLevelScore(widget.level, scorePercent);
+    try {
+      await SukuKataService.submitLevelScore(
+        levelId: widget.level.id,
+        score: scorePercent,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Submit score gagal: $e')),
+        );
+      }
+    }
 
-    // XP Gain
-    int xpGain = correctCount * 5;
-
-    double currentXP = await SukuKataService.getLevelScore(widget.level);
-    await SukuKataService.saveLevelScore(widget.level, scorePercent);
-
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => _resultDialog(scorePercent, xpGain),
+      builder: (_) => _resultDialog(scorePercent, xpGain, total),
     );
   }
 
-  // -----------------------------
-  // RESULT DIALOG
-  // -----------------------------
-  Widget _resultDialog(double score, int xpGain) {
+  Widget _resultDialog(double score, int xpGain, int total) {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 30),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
@@ -157,7 +151,7 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              score >= 50 ? "Bagus Sekali!" : "Ayo Coba Lagi",
+              score >= 50 ? 'Bagus Sekali!' : 'Ayo Coba Lagi',
               style: GoogleFonts.poppins(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
@@ -166,13 +160,11 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
             ),
             const SizedBox(height: 10),
             Text(
-              "Benar: $correctCount dari 5\n+ $xpGain XP",
+              'Benar: $_correctCount dari $total\n+ $xpGain XP',
               style: GoogleFonts.poppins(fontSize: 16),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 30),
-
-            // BUTTON
             GestureDetector(
               onTap: () {
                 Navigator.pop(context);
@@ -189,7 +181,7 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
                 ),
                 child: Center(
                   child: Text(
-                    "Kembali",
+                    'Kembali',
                     style: GoogleFonts.poppins(
                       fontSize: 17,
                       color: Colors.white,
@@ -205,10 +197,7 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
     );
   }
 
-  // -----------------------------
-  // OPTION BUTTON
-  // -----------------------------
-  Widget buildOption(String label) {
+  Widget _buildOption(String label) {
     return ScaleTransition(
       scale: Tween(begin: 1.0, end: 1.12).animate(
         CurvedAnimation(
@@ -217,7 +206,7 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
         ),
       ),
       child: GestureDetector(
-        onTap: () => checkAnswer(label),
+        onTap: () => _checkAnswer(label),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
@@ -250,19 +239,35 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
     );
   }
 
-  // -----------------------------
-  // BUILD UI
-  // -----------------------------
   @override
   Widget build(BuildContext context) {
-    final options = currentSet.keys.take(3).toList();
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_sessionQuestions.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.level.title, style: GoogleFonts.poppins()),
+          backgroundColor: const Color(0xFF50D1A0),
+        ),
+        body: Center(
+          child: Text(
+            'Belum ada soal untuk level ini.',
+            style: GoogleFonts.poppins(fontSize: 15),
+          ),
+        ),
+      );
+    }
+
+    final current = _sessionQuestions[_questionIndex];
+    final options = _optionsFor(current);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "Latihan Level ${widget.level}",
-          style: GoogleFonts.poppins(),
-        ),
+        title: Text(widget.level.title, style: GoogleFonts.poppins()),
         backgroundColor: const Color(0xFF50D1A0),
       ),
       body: Padding(
@@ -270,11 +275,10 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // PROGRESS
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (i) {
-                final active = (i + 1) <= questionIndex;
+              children: List.generate(_sessionQuestions.length, (i) {
+                final active = i <= _questionIndex;
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 350),
                   margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -287,10 +291,7 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
                 );
               }),
             ),
-
             const SizedBox(height: 24),
-
-            // QUESTION: ARABIC
             Container(
               padding: const EdgeInsets.symmetric(vertical: 40),
               decoration: BoxDecoration(
@@ -306,7 +307,7 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
               ),
               child: Center(
                 child: Text(
-                  currentSyllable,
+                  current.arabic,
                   style: const TextStyle(
                     fontSize: 90,
                     fontWeight: FontWeight.bold,
@@ -315,19 +316,15 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
                 ),
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // OPTIONS
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 3,
-                childAspectRatio: 1.2,
-                crossAxisSpacing: 18,
-                mainAxisSpacing: 18,
-                children: [
-                  for (var o in options) buildOption(o),
-                ],
+              child: Column(
+                children: options
+                    .map((opt) => Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: _buildOption(opt),
+                        ))
+                    .toList(),
               ),
             ),
           ],

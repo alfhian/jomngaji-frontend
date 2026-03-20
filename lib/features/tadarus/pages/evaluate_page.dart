@@ -7,7 +7,6 @@ import 'package:just_audio/just_audio.dart' as ja;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:audio_session/audio_session.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../models/surah.dart';
 import '../../../models/evaluation_result.dart';
@@ -182,14 +181,10 @@ class _EvaluatePageState extends State<EvaluatePage> {
     setState(() => _isEvaluating = true);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt('userId')!;
-
       final refPath = await _copyAsset(_assetPath(_currentAyahIndex));
 
       final json = await _api.evaluateTadarusAudio(
-        userId: userId,
-        surah: widget.surah.number.toString(),
+        surah: widget.surah.number,
         ayah: widget.surah.ayahs[_currentAyahIndex].ayah,
         totalAyah: widget.surah.ayahs.length,
         userAudioPath: _recordedPath!,

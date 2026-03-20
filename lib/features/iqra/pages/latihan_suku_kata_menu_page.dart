@@ -1,42 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../routes/app_routes.dart';
+
 import '../../../services/suku_kata_service.dart';
+import 'latihan_suku_kata_page.dart';
 
 class LatihanSukuKataMenuPage extends StatefulWidget {
   const LatihanSukuKataMenuPage({super.key});
 
   @override
-  State<LatihanSukuKataMenuPage> createState() =>
-      _LatihanSukuKataMenuPageState();
+  State<LatihanSukuKataMenuPage> createState() => _LatihanSukuKataMenuPageState();
 }
 
 class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
-  int unlockedCount = 1; // Level 1 selalu unlocked
-  double progressValue = 0.0;
-
-  static const int totalLevels = 10;
+  bool _loading = true;
+  List<SukuKataLevel> _levels = [];
+  double _progressFromApi = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _loadUnlockedLevels();
+    _loadLevels();
   }
 
-  Future<void> _loadUnlockedLevels() async {
-    int count = 1; // level 1 default unlocked
-
-    for (int i = 2; i <= totalLevels; i++) {
-      bool unlocked = await SukuKataService.isLevelUnlocked(i);
-      if (unlocked) count++;
+  Future<void> _loadLevels() async {
+    setState(() => _loading = true);
+    try {
+      final payload = await SukuKataService.getLevels();
+      setState(() {
+        _levels = payload.levels;
+        _progressFromApi = payload.progressPercentage;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengambil level: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
+  }
 
-    print(count);
-
-    setState(() {
-      unlockedCount = count;
-      progressValue = count / totalLevels;
-    });
+  double get _progressValue {
+    if (_progressFromApi > 0) return _progressFromApi.clamp(0.0, 1.0);
+    if (_levels.isEmpty) return 0.0;
+    final unlocked = _levels.where((e) => e.isUnlocked).length;
+    return unlocked / _levels.length;
   }
 
   @override
@@ -44,24 +52,26 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: null,
-      body: ListView(
-        children: [
-          _heroSection(context),
-          const SizedBox(height: 20),
-          _descriptionSection(),
-          const SizedBox(height: 22),
-          _progressSection(),
-          const SizedBox(height: 25),
-          _levelList(context),
-          const SizedBox(height: 30),
-        ],
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadLevels,
+              child: ListView(
+                children: [
+                  _heroSection(context),
+                  const SizedBox(height: 20),
+                  _descriptionSection(),
+                  const SizedBox(height: 22),
+                  _progressSection(),
+                  const SizedBox(height: 25),
+                  _levelList(context),
+                  const SizedBox(height: 30),
+                ],
+              ),
+            ),
     );
   }
 
-  // =========================================================
-  // 📌 HERO SECTION
-  // =========================================================
   Widget _heroSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -70,7 +80,7 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
           bottomRight: Radius.circular(32),
         ),
         image: const DecorationImage(
-          image: AssetImage("assets/images/hijaiyah_banner_2.png"),
+          image: AssetImage('assets/images/hijaiyah_banner_2.png'),
           fit: BoxFit.cover,
         ),
       ),
@@ -106,7 +116,7 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
             ),
             const SizedBox(height: 28),
             Text(
-              "Latihan Suku Kata",
+              'Latihan Suku Kata',
               style: GoogleFonts.poppins(
                 color: Colors.white.withOpacity(0.9),
                 fontSize: 18,
@@ -115,7 +125,7 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              "Mengenal dan Mengucapkan Suku Kata",
+              'Mengenal dan Mengucapkan Suku Kata',
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontSize: 32,
@@ -129,9 +139,6 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
     );
   }
 
-  // =========================================================
-  // 📌 Description
-  // =========================================================
   Widget _descriptionSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -139,7 +146,7 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Belajar membaca, mengenal, dan mengucapkan suku kata.",
+            'Belajar membaca, mengenal, dan mengucapkan suku kata.',
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: Colors.black87,
@@ -147,7 +154,7 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            "10 Level Pelajaran",
+            '${_levels.length} Level Pelajaran',
             style: GoogleFonts.poppins(
               fontSize: 13,
               color: Colors.black54,
@@ -158,9 +165,6 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
     );
   }
 
-  // =========================================================
-  // 📌 PROGRESS BAR (Unlocked Count)
-  // =========================================================
   Widget _progressSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -168,7 +172,7 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Progress",
+            'Progress',
             style: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -178,7 +182,7 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
-              value: progressValue,
+              value: _progressValue,
               backgroundColor: Colors.grey.shade300,
               minHeight: 8,
               color: const Color(0xFF50D1A0),
@@ -186,7 +190,7 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            "${(progressValue * 100).toInt()}% selesai",
+            '${(_progressValue * 100).toInt()}% selesai',
             style: GoogleFonts.poppins(
               fontSize: 12,
               color: Colors.black54,
@@ -197,65 +201,47 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
     );
   }
 
-  // =========================================================
-  // 📌 LIST LEVEL (Dynamic Lock/Unlock)
-  // =========================================================
   Widget _levelList(BuildContext context) {
-    List<Map<String, String>> levels = [
-      {"title": "Level 1", "desc": "BA – BI – BU", "route": AppRoutes.latihanSukuKataLevel1},
-      {"title": "Level 2", "desc": "TA – TI – TU", "route": AppRoutes.latihanSukuKataLevel2},
-      {"title": "Level 3", "desc": "FA – FI – FU", "route": AppRoutes.latihanSukuKataLevel3},
-      {"title": "Level 4", "desc": "Dua Huruf", "route": AppRoutes.latihanSukuKataLevel4},
-      {"title": "Level 5", "desc": "Tiga Huruf", "route": AppRoutes.latihanSukuKataLevel5},
-      {"title": "Level 6", "desc": "Tanwin", "route": AppRoutes.latihanSukuKataLevel6},
-      {"title": "Level 7", "desc": "Sukun", "route": AppRoutes.latihanSukuKataLevel7},
-      {"title": "Level 8", "desc": "Tasydid", "route": AppRoutes.latihanSukuKataLevel8},
-      {"title": "Level 9", "desc": "Mad", "route": AppRoutes.latihanSukuKataLevel9},
-      {"title": "Level 10", "desc": "Ayat Pendek", "route": AppRoutes.latihanSukuKataLevel10},
-    ];
+    if (_levels.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Text(
+          'Belum ada level dari server.',
+          style: GoogleFonts.poppins(fontSize: 14),
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
-        children: List.generate(levels.length, (index) {
-          final level = levels[index];
-          final levelNumber = index + 1;
-
-          final unlocked = levelNumber <= unlockedCount;
-
+        children: _levels.map((level) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: _levelCard(
               context,
-              title: level["title"]!,
-              desc: level["desc"]!,
-              route: level["route"]!,
-              icon: Icons.menu_book_rounded,
-              unlocked: unlocked,
-              levelNumber: levelNumber,
+              level: level,
             ),
           );
-        }),
+        }).toList(),
       ),
     );
   }
 
-  // =========================================================
-  // 📌 LEVEL CARD
-  // =========================================================
   Widget _levelCard(
     BuildContext context, {
-    required String title,
-    required String desc,
-    required IconData icon,
-    required String route,
-    required bool unlocked,
-    required int levelNumber,
+    required SukuKataLevel level,
   }) {
+    final unlocked = level.isUnlocked;
+
     return GestureDetector(
       onTap: unlocked
-          ? () => Navigator.pushNamed(context, route)
-              .then((_) => _loadUnlockedLevels())
+          ? () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => LatihanSukuKataPage(level: level),
+                ),
+              ).then((_) => _loadLevels())
           : null,
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -274,38 +260,45 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
               color: unlocked ? const Color(0xFF50D1A0) : Colors.grey,
             ),
             const SizedBox(width: 16),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    level.title,
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                      fontSize: 15,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    desc,
+                    level.description.isEmpty
+                        ? 'Soal: ${level.totalQuestions}'
+                        : level.description,
                     style: GoogleFonts.poppins(
                       fontSize: 13,
-                      color: Colors.black87,
+                      color: Colors.black54,
                     ),
                   ),
                 ],
               ),
             ),
-
-            if (unlocked)
+            if (level.isPremium)
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF50D1A0),
-                  shape: BoxShape.circle,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                child: Text(
+                  'PREMIUM',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.orange.shade800,
+                  ),
+                ),
               ),
           ],
         ),

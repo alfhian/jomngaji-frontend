@@ -178,7 +178,7 @@ class AppRoutes {
     latihanBaca: (_) => const LatihanBacaPage(),
     pengucapan: (_) => const PengucapanPage(),
     latihanHarakat: (_) => const LatihanHarakatPage(),
-    latihanSukuKata: (_) => const LatihanSukuKataPage(),
+    latihanSukuKata: (_) => const LatihanSukuKataMenuPage(),
     latihanSukuKataMenu: (_) => const LatihanSukuKataMenuPage(),
     latihanSukuKataLevel2: (_) => const LatihanSukuKataLevel2Page(),
     latihanSukuKataLevel3: (_) => const LatihanSukuKataLevel3Page(),

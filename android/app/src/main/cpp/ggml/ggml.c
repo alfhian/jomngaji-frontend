@@ -4919,8 +4919,8 @@ static struct ggml_tensor * ggml_soft_max_impl(
     GGML_ASSERT(ggml_is_contiguous(a));
     if (mask) {
         GGML_ASSERT(ggml_is_contiguous(mask));
-        GGML_ASSERT(maREMOVED>ne[2] == 1);
-        GGML_ASSERT(maREMOVED>ne[3] == 1);
+        GGML_ASSERT(mask->ne[2] == 1);
+        GGML_ASSERT(mask->ne[3] == 1);
         GGML_ASSERT(ggml_can_repeat_rows(mask, a));
     }
 
