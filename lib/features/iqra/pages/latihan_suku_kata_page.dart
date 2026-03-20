@@ -69,6 +69,12 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
         _sessionQuestions =
             questions.take(min(_maxQuestions, questions.length)).toList();
       });
+    } on PremiumLockedException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
