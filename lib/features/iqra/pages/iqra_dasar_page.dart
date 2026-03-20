@@ -44,7 +44,7 @@ class IqraDasarPage extends StatelessWidget {
             title: "Pengucapan (Makhraj)",
             subtitle: "Latihan pelafalan huruf & makhraj",
             icon: Icons.record_voice_over_rounded,
-            route: AppRoutes.pengucapan,
+            route: AppRoutes.makhraj,
           ),
 
           _iqraItem(
