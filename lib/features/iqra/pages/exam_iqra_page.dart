@@ -411,7 +411,7 @@ class _ExamIqraPageState extends State<ExamIqraPage> {
           Positioned.fill(
             child: Image.asset(
               'assets/images/ujian-mengaji.png',
-              fit: BoxFit.cover,
+              fit: BoxFit.fitWidth,
               alignment: Alignment.bottomCenter,
             ),
           ),
@@ -422,9 +422,9 @@ class _ExamIqraPageState extends State<ExamIqraPage> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withOpacity(0.93),
-                    Colors.white.withOpacity(0.86),
-                    Colors.white.withOpacity(0.78),
+                    Colors.white.withOpacity(0.88),
+                    Colors.white.withOpacity(0.82),
+                    Colors.white.withOpacity(0.72),
                   ],
                 ),
               ),

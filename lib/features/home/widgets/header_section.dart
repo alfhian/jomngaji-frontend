@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/widgets/search_field.dart';
 
 class HeaderSection extends StatelessWidget {
   const HeaderSection({super.key});
@@ -8,29 +7,14 @@ class HeaderSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          _backgroundHeader(),
-          const Positioned(
-            left: 20,
-            right: 20,
-            bottom: -25, // supaya floating naik sedikit
-            child: Material(
-              elevation: 6,
-              borderRadius: BorderRadius.all(Radius.circular(20)),
-              child: SearchField(),
-            ),
-          ),
-        ],
-      ),
+      child: _backgroundHeader(),
     );
   }
 
   Widget _backgroundHeader() {
     return Container(
       width: double.infinity,
-      height: 230,
+      height: 270,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.only(
@@ -78,12 +62,12 @@ class HeaderSection extends StatelessWidget {
                 fontSize: 12,
               ),
             ),
-            SizedBox(height: 24),
+            SizedBox(height: 34),
             Text(
               "Temukan kelas\nngaji favoritmu!",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 26,
+                fontSize: 30,
                 fontWeight: FontWeight.w800,
                 height: 1.2,
               ),

@@ -19,13 +19,13 @@ class HomePage extends StatelessWidget {
           child: Column(
             children: [
               const HeaderSection(),
-              const SizedBox(height: 70),
+              const SizedBox(height: 18),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    SectionTitle(title: 'Kategori Ngaji'),
+                    SectionTitle(title: 'Kategori Ngaji', showSeeAll: false),
                     SizedBox(height: 12),
                     CategoryList(),
                     SizedBox(height: 24),
