@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'halqiy_page.dart';
+import 'khaysyum_page.dart';
+import 'lisani_page.dart';
+import 'syafawi_page.dart';
+
 class MakhrajPage extends StatefulWidget {
   const MakhrajPage({super.key});
 
@@ -9,14 +14,38 @@ class MakhrajPage extends StatefulWidget {
 }
 
 class _MakhrajPageState extends State<MakhrajPage> {
-  int currentIndex = 0;
-  final List<String> hurufList = ["ب", "ت", "ث", "ج", "ح"];
-  String feedback = "";
+  final Set<int> _visited = <int>{};
+
+  late final List<_MakhrajItem> _items = [
+    _MakhrajItem(
+      title: 'Halqiy (Tenggorokan)',
+      subtitle: 'Huruf: ء هـ',
+      icon: Icons.record_voice_over_rounded,
+      pageBuilder: (_) => const HalqiyPage(),
+    ),
+    _MakhrajItem(
+      title: 'Lisani (Lidah)',
+      subtitle: 'Huruf: ت د ط ظ ل ر',
+      icon: Icons.forum_rounded,
+      pageBuilder: (_) => const LisaniPage(),
+    ),
+    _MakhrajItem(
+      title: 'Syafawi (Bibir)',
+      subtitle: 'Huruf: ف ب م',
+      icon: Icons.mic_rounded,
+      pageBuilder: (_) => const SyafawiPage(),
+    ),
+    _MakhrajItem(
+      title: 'Khaysyum (Rongga Hidung)',
+      subtitle: 'Huruf: ن (ghunnah)',
+      icon: Icons.graphic_eq_rounded,
+      pageBuilder: (_) => const KhaysyumPage(),
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final currentHuruf = hurufList[currentIndex];
-    final progress = (currentIndex + 1) / hurufList.length;
+    final progress = _items.isEmpty ? 0.0 : _visited.length / _items.length;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -31,7 +60,7 @@ class _MakhrajPageState extends State<MakhrajPage> {
           const SizedBox(height: 18),
           _makhrajInfoCard(),
           const SizedBox(height: 18),
-          _latihanCards(currentHuruf),
+          _makhrajCards(context),
           const SizedBox(height: 28),
         ],
       ),
@@ -109,7 +138,7 @@ class _MakhrajPageState extends State<MakhrajPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Text(
-        'Belajar mengucapkan huruf hijaiyah sesuai tempat keluarnya suara agar bacaan lebih fasih.',
+        'Belajar kategori makhraj seperti Halqiy, Lisani, Syafawi, dan Khaysyum agar pengucapan huruf lebih tepat.',
         style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
       ),
     );
@@ -122,7 +151,7 @@ class _MakhrajPageState extends State<MakhrajPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Progress Latihan',
+            'Progress Eksplorasi Makhraj',
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
@@ -137,7 +166,7 @@ class _MakhrajPageState extends State<MakhrajPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${(progress * 100).toInt()}% selesai',
+            '${_visited.length}/${_items.length} kategori dibuka',
             style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
           ),
         ],
@@ -173,8 +202,8 @@ class _MakhrajPageState extends State<MakhrajPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Makhraj adalah tempat keluarnya huruf saat diucapkan (misalnya dari tenggorokan, lidah, atau bibir). '
-              'Memahami makhraj membantu pengucapan huruf jadi jelas dan benar.',
+              'Makhraj adalah tempat keluarnya huruf saat diucapkan (contoh: tenggorokan, lidah, bibir, dan rongga hidung). '
+              'Pilih kategori di bawah untuk masuk ke halaman latihan khusus masing-masing.',
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 height: 1.45,
@@ -187,62 +216,77 @@ class _MakhrajPageState extends State<MakhrajPage> {
     );
   }
 
-  Widget _latihanCards(String currentHuruf) {
+  Widget _makhrajCards(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          ...List.generate(hurufList.length, (i) {
-            final active = i == currentIndex;
+          ...List.generate(_items.length, (i) {
+            final item = _items[i];
+            final opened = _visited.contains(i);
+
             return GestureDetector(
-              onTap: () => setState(() => currentIndex = i),
+              onTap: () {
+                setState(() => _visited.add(i));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: item.pageBuilder),
+                );
+              },
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: active ? const Color(0xFFE7FFF2) : Colors.white,
+                  color: opened ? const Color(0xFFE7FFF2) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: active ? const Color(0xFF50D1A0) : Colors.grey.shade300,
+                    color: opened ? const Color(0xFF50D1A0) : Colors.grey.shade300,
                   ),
                 ),
                 child: Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: active
+                      backgroundColor: opened
                           ? const Color(0xFF50D1A0)
                           : Colors.grey.shade300,
-                      child: Text(
-                        hurufList[i],
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: Icon(item.icon, color: Colors.white, size: 20),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
-                      child: Text(
-                        'Latihan huruf ${hurufList[i]}',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            item.subtitle,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Icon(
-                      active ? Icons.play_circle_fill_rounded : Icons.chevron_right_rounded,
-                      color: active ? const Color(0xFF50D1A0) : Colors.black45,
+                      opened ? Icons.play_circle_fill_rounded : Icons.chevron_right_rounded,
+                      color: opened ? const Color(0xFF50D1A0) : Colors.black45,
                     ),
                   ],
                 ),
               ),
             );
           }),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
               image: const DecorationImage(
@@ -251,51 +295,17 @@ class _MakhrajPageState extends State<MakhrajPage> {
               ),
             ),
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                color: Colors.white.withOpacity(0.82),
+                color: Colors.white.withOpacity(0.84),
               ),
-              child: Column(
-                children: [
-                  Text(
-                    'Huruf aktif: $currentHuruf',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF42C88A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        feedback = 'Sedang merekam huruf $currentHuruf...';
-                      });
-                    },
-                    icon: const Icon(Icons.mic_rounded),
-                    label: Text(
-                      'Mulai Rekam',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    feedback,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
+              child: Text(
+                'Tip: mulai dari Halqiy lalu lanjut Lisani → Syafawi → Khaysyum agar urutan latihan lebih terstruktur.',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: Colors.black87,
+                ),
               ),
             ),
           ),
@@ -303,4 +313,18 @@ class _MakhrajPageState extends State<MakhrajPage> {
       ),
     );
   }
+}
+
+class _MakhrajItem {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final WidgetBuilder pageBuilder;
+
+  const _MakhrajItem({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.pageBuilder,
+  });
 }
