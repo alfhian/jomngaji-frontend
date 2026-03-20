@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../data/hijaiyah_data.dart';
 import 'materi_huruf_detail_page.dart';
+import '../../../services/progress_service.dart';
 
 class MateriHijaiyahPage extends StatelessWidget {
   const MateriHijaiyahPage({super.key});
@@ -233,35 +234,37 @@ class MateriHijaiyahPage extends StatelessWidget {
         children: List.generate(
           materiHijaiyahLessons.length,
           (index) {
-            final lesson = materiHijaiyahLessons[index];
-            final unlock = index == 0; // sementara hanya pelajaran 1 yg terbuka
+            return FutureBuilder<bool>(
+              future: ProgressService.isLessonUnlocked(index + 1),
+              builder: (context, snapshot) {
+                final unlocked = snapshot.data ?? (index == 0);
 
-            return _lessonItem(
-              context,
-              number: index + 1,
-              title: lesson["title"] as String,
-              unlocked: unlock,
-              onTap: unlock
-                  ? () {
-                      // ✅ CAST ke List<int> dulu
-                      final List<int> idxList =
-                          List<int>.from(lesson["list"] as List);
+                final lesson = materiHijaiyahLessons[index];
+                final List<int> idxList = List<int>.from(lesson["list"] as List);
+                final List<HijaiyahData> hurufList =
+                    idxList.map((i) => hijaiyahList[i]).toList();
 
-                      final List<HijaiyahData> hurufList = idxList
-                          .map((i) => hijaiyahList[i])
-                          .toList();
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => MateriHurufDetailPage(
-                            lessonTitle: lesson["title"] as String,
-                            hurufList: hurufList,
-                          ),
-                        ),
-                      );
-                    }
-                  : null,
+                return _lessonItem(
+                  context,
+                  number: index + 1,
+                  title: lesson["title"] as String,
+                  unlocked: unlocked,
+                  onTap: unlocked
+                      ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MateriHurufDetailPage(
+                                lessonId: index + 1,
+                                lessonTitle: lesson["title"] as String,
+                                hurufList: hurufList,
+                              ),
+                            ),
+                          );
+                        }
+                      : null,
+                );
+              },
             );
           },
         ),

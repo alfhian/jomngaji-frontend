@@ -1,27 +1,33 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:jomngaji/services/openai_pronunciation_service.dart';
+import 'package:jomngaji/models/evaluation_result.dart';
+import 'package:jomngaji/services/evaluation_api.dart';
 import 'package:jomngaji/services/progress_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../data/hijaiyah_data.dart';
+import '../../../core/widgets/custom_gradient_appbar.dart';
 
 class LatihanPengucapanPage extends StatefulWidget {
+  final int lessonId;
   final String lessonTitle;
   final List<HijaiyahData> hurufList;
 
   const LatihanPengucapanPage({
     super.key,
+    required this.lessonId,
     required this.lessonTitle,
     required this.hurufList,
   });
 
   @override
-  State<LatihanPengucapanPage> createState() => _LatihanPengucapanPageState();
+  State<LatihanPengucapanPage> createState() =>
+      _LatihanPengucapanPageState();
 }
 
 class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
@@ -36,18 +42,24 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
   int _currentIndex = 0;
   late List<String?> _recordedPaths;
 
+  late final EvaluationApi _api;
+
   @override
   void initState() {
     super.initState();
+    _api = EvaluationApi('http://10.71.164.20:4000');
     _recordedPaths = List<String?>.filled(widget.hurufList.length, null);
     _initRecorder();
   }
 
   Future<void> _initRecorder() async {
-    final perm = await Permission.microphone.request();
-    if (!perm.isGranted) return;
+    await Permission.microphone.request();
+    await Permission.storage.request();
+
+    if (!await Permission.microphone.isGranted) return;
 
     await _recorder.openRecorder();
+    await _recorder.setSubscriptionDuration(const Duration(milliseconds: 500));
     await _player.openPlayer();
 
     setState(() => _recorderReady = true);
@@ -60,15 +72,11 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
     super.dispose();
   }
 
-  // ----------------------------------------------------
-  // RECORD
-  // ----------------------------------------------------
+  // ----------------- RECORD -----------------
   Future<void> _startRecording() async {
     if (!_recorderReady || _isRecording) return;
 
-    if (_player.isPlaying) {
-      await _player.stopPlayer();
-    }
+    if (_player.isPlaying) await _player.stopPlayer();
 
     final dir = await getTemporaryDirectory();
     final path =
@@ -77,8 +85,9 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
     await _recorder.startRecorder(
       toFile: path,
       codec: Codec.aacADTS,
-      sampleRate: 44100,
+      sampleRate: 16000,
       numChannels: 1,
+      bitRate: 16000,
     );
 
     setState(() {
@@ -89,17 +98,12 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
 
   Future<void> _stopRecording() async {
     if (!_isRecording) return;
-
     final path = await _recorder.stopRecorder();
-    setState(() {
-      _isRecording = false;
-      if (path != null) _recordedPaths[_currentIndex] = path;
-    });
+    setState(() => _isRecording = false);
+    if (path != null) _recordedPaths[_currentIndex] = path;
   }
 
-  // ----------------------------------------------------
-  // PLAYBACK
-  // ----------------------------------------------------
+  // ----------------- PLAYBACK -----------------
   Future<void> _playRecorded() async {
     final path = _recordedPaths[_currentIndex];
     if (path == null) return;
@@ -117,117 +121,238 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
     );
   }
 
-  // ----------------------------------------------------
-  // EVALUATION (placeholder - nanti diganti OpenAI)
-  // ----------------------------------------------------
+  // ----------------- EVALUATE -----------------
   Future<void> _onEvaluate() async {
-  final path = _recordedPaths[_currentIndex];
-    if (path == null || _isEvaluating) return;
+    if (_isEvaluating) return;
+
+    final path = _recordedPaths[_currentIndex];
+
+    if (path == null || path.isEmpty) {
+      _showError("Silakan rekam suara terlebih dahulu");
+      return;
+    }
 
     setState(() => _isEvaluating = true);
 
     try {
-      final transcript = await OpenAIPronunciationService.transcribe(path);
+      final target = widget.hurufList[_currentIndex].arabic;
 
-      if (transcript == null) {
-        _showError("Gagal transkripsi audio.");
-        return;
-      }
+      final json = await _api.evaluateAudio(
+        audioPath: path,
+        targetText: target,
+        lessonId: widget.lessonId,
+      );
 
-      final target = widget.hurufList[_currentIndex].caraBaca;
-      final score = _scorePronunciation(transcript, target);
+      print(json);
 
-      _handleEvaluationResult(score);
+      final result = EvaluationResult.fromJson(json);
 
+      print('=== PARSED EVALUATION RESULT ===');
+      print('score: ${result.score}');
+      print('feedback: ${result.feedback}');
+      print('errors: ${result.errors}');
+
+      await _handleEvaluationResult(result);
     } catch (e) {
-      _showError("Error menilai: $e");
+      _showError("Gagal evaluasi: $e");
     } finally {
       if (mounted) setState(() => _isEvaluating = false);
     }
   }
 
+  Future<void> _handleEvaluationResult(EvaluationResult r) async {
+    final score = r.score.clamp(0, 100);
+    Color scoreColor;
+    String label;
+    String emoji;
 
-  // ----------------------------------------------------
-  // SCORING (penilaian OpenAI)
-  // ----------------------------------------------------
-  // Fungsi untuk memberi skor berdasarkan kesesuaian antara transkripsi dan target
-  int _scorePronunciation(String transcript, String target) {
-    // Mengubah hasil transkripsi dan target ke huruf kecil dan menghapus spasi
-    final t = transcript.toLowerCase().trim();
-    final goal = target.toLowerCase().trim();
-
-    // Kasus 1: Jika transkripsi dan target sama persis
-    if (t == goal) return 100;
-
-    // Kasus 2: Jika transkripsi mengandung target (sudah cukup mirip)
-    if (t.contains(goal)) return 80;
-
-    // Kasus 3: Jika target mengandung transkripsi (transkripsi kurang tepat, tetapi masih bisa dimengerti)
-    if (goal.contains(t)) return 60;
-
-    // Kasus 4: Jika ada transkripsi, tetapi tidak cocok sama sekali
-    if (t.isNotEmpty) return 40;
-
-    // Kasus 5: Jika tidak ada transkripsi (kosong)
-    return 0;
-  }
-
-
-  // ----------------------------------------------------
-  // HANDLE RESULT
-  // ----------------------------------------------------
-  Future<void> _handleEvaluationResult(int score) async {
-    if (score < 50) {
-      _showResult(score, "Kurang tepat, coba lagi ya.");
-      return;
+    if (score >= 90) {
+      scoreColor = const Color(0xFF42C88A);
+      label = "MasyaAllah!";
+      emoji = "🌟";
+    } else if (score >= 75) {
+      scoreColor = const Color(0xFF5FB3F3);
+      label = "Bagus!";
+      emoji = "👍";
+    } else if (score >= 50) {
+      scoreColor = Colors.orange;
+      label = "Cukup Baik";
+      emoji = "🙂";
+    } else {
+      scoreColor = Colors.redAccent;
+      label = "Perlu Latihan";
+      emoji = "⚠️";
     }
 
-    // Jika masih ada huruf selanjutnya
-    if (_currentIndex < widget.hurufList.length - 1) {
-      setState(() => _currentIndex++);
-      _showResult(score, "Bagus! Lanjut ke huruf berikutnya.");
-      return;
-    }
+    SystemSound.play(SystemSoundType.alert);
 
-    // Jika huruf terakhir → unlock lesson
-    await ProgressService.saveLessonScore(1, 100);
-    _showResult(score, "Kamu sudah menguasai seluruh huruf!");
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "score",
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 280),
+      pageBuilder: (_, __, ___) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.85,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: const [
+                  BoxShadow(
+                    blurRadius: 30,
+                    color: Colors.black26,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "$emoji  $label",
+                    style: GoogleFonts.poppins(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w700,
+                      color: scoreColor,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  // Score ring
+                  SizedBox(
+                    width: 150,
+                    height: 150,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 150,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                scoreColor.withOpacity(0.25),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 130,
+                          height: 130,
+                          child: CircularProgressIndicator(
+                            value: score / 100,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.grey.shade200,
+                            valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
+                          ),
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "$score",
+                              style: GoogleFonts.poppins(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: scoreColor,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "Skor",
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    r.feedback,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      height: 1.6,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  // if (r.errors.isNotEmpty) ...[
+                  //   const SizedBox(height: 16),
+                  //   ...r.errors.map(
+                  //     (e) => Padding(
+                  //       padding: const EdgeInsets.only(top: 4),
+                  //       child: Row(
+                  //         mainAxisAlignment: MainAxisAlignment.center,
+                  //         children: [
+                  //           const Icon(Icons.error_outline, size: 16, color: Colors.redAccent),
+                  //           const SizedBox(width: 6),
+                  //           Flexible(
+                  //             child: Text(
+                  //               e,
+                  //               textAlign: TextAlign.center,
+                  //               style: GoogleFonts.poppins(fontSize: 13, color: Colors.redAccent),
+                  //             ),
+                  //           ),
+                  //         ],
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ],
+                  const SizedBox(height: 26),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: scoreColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: Text(
+                        "Tutup",
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (_, anim, __, child) {
+        return Transform.scale(
+          scale: Curves.easeOutBack.transform(anim.value),
+          child: Opacity(opacity: anim.value, child: child),
+        );
+      },
+    ).then((_) {
+      // Jika skor >=50, lanjut ke huruf berikutnya
+      if (score >= 50 && _currentIndex < widget.hurufList.length - 1) {
+        setState(() => _currentIndex++);
+      } else if (_currentIndex == widget.hurufList.length - 1 && score >= 50) {
+        // unlock lesson terakhir
+        ProgressService.saveLessonScore(1, score.toDouble());
+      }
+    });
   }
 
-  // ----------------------------------------------------
-  // UI HELPERS
-  // ----------------------------------------------------
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg)),
     );
   }
 
-  void _showResult(int score, String saran) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(
-          "Hasil Penilaian",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          "Skor: $score / 100\n\n$saran",
-          style: GoogleFonts.poppins(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          )
-        ],
-      ),
-    );
-  }
-
-  // ----------------------------------------------------
-  // UI COMPONENTS
-  // ----------------------------------------------------
+  // ----------------- UI -----------------
   Widget _infoCard() {
     final current = widget.hurufList[_currentIndex];
     return Container(
@@ -238,18 +363,17 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
         borderRadius: BorderRadius.circular(18),
       ),
       child: Text(
-        "Latihan bunyi: \"${current.caraBaca}\"",
+        "Latihan bunyi: \"${current.latin}\"",
         style: GoogleFonts.poppins(fontSize: 14),
       ),
     );
   }
 
-  Widget _hurufTabs(List<HijaiyahData> list) {
+  Widget _hurufTabs() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(list.length, (i) {
+      children: List.generate(widget.hurufList.length, (i) {
         final active = i == _currentIndex;
-
         return GestureDetector(
           onTap: () {
             if (_isRecording) return;
@@ -263,10 +387,8 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              list[i].caraBaca,
-              style: GoogleFonts.poppins(
-                color: active ? Colors.white : Colors.black,
-              ),
+              widget.hurufList[i].latin,
+              style: GoogleFonts.poppins(color: active ? Colors.white : Colors.black),
             ),
           ),
         );
@@ -287,27 +409,13 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
           child: Center(
             child: Text(
               data.huruf,
-              style: const TextStyle(
-                fontSize: 64,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 64, fontWeight: FontWeight.bold),
             ),
           ),
         ),
         const SizedBox(height: 10),
-        Text(
-          data.caraBaca,
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          data.nama,
-          style: GoogleFonts.poppins(
-            color: Colors.black54,
-          ),
-        ),
+        Text(data.latin, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(data.nama, style: GoogleFonts.poppins(color: Colors.black54)),
       ],
     );
   }
@@ -315,26 +423,25 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
   Widget _recordControls() {
     return Column(
       children: [
-        GestureDetector(
-          onTap: _isRecording ? _stopRecording : _startRecording,
-          child: Container(
-            width: 90,
-            height: 90,
-            decoration: BoxDecoration(
-              color: _isRecording ? Colors.red : const Color(0xFF42C88A),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              _isRecording ? Icons.stop : Icons.mic,
-              color: Colors.white,
-              size: 38,
-            ),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _isRecording ? Colors.red : const Color(0xFF42C88A),
+            boxShadow: [BoxShadow(blurRadius: 12, color: Colors.black26)],
+          ),
+          child: IconButton(
+            iconSize: 42,
+            icon: Icon(_isRecording ? Icons.stop : Icons.mic, color: Colors.white),
+            onPressed: _isRecording ? _stopRecording : _startRecording,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Text(
-          _isRecording ? "Sedang merekam..." : "Tap untuk rekam",
-          style: GoogleFonts.poppins(fontSize: 13),
+          _isRecording ? "Sedang merekam..." : "Tap untuk mulai merekam",
+          style: GoogleFonts.poppins(color: Colors.grey),
         ),
       ],
     );
@@ -349,42 +456,33 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
         ElevatedButton.icon(
           onPressed: _isPlaying ? null : _playRecorded,
           icon: const Icon(Icons.play_arrow),
-          label: Text(
-            _isPlaying ? "Memutar..." : "Putar rekaman",
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF5E60CE),
-          ),
+          label: Text(_isPlaying ? "Memutar..." : "Putar rekaman"),
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5E60CE)),
         ),
         const SizedBox(height: 12),
         ElevatedButton.icon(
           onPressed: _isEvaluating ? null : _onEvaluate,
           icon: const Icon(Icons.auto_awesome),
-          label: Text(
-            _isEvaluating ? "Menilai..." : "Nilai Pengucapan",
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange.shade700,
-          ),
+          label: Text(_isEvaluating ? "Menilai..." : "Nilai Pengucapan"),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade700),
         ),
       ],
     );
   }
 
-  // ----------------------------------------------------
-  // MAIN BUILD
-  // ----------------------------------------------------
   @override
   Widget build(BuildContext context) {
+    final current = widget.hurufList[_currentIndex];
+
     return Scaffold(
-      appBar: AppBar(title: Text(widget.lessonTitle)),
+      appBar: CustomGradientAppBar(title: widget.lessonTitle),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           _infoCard(),
-          if (widget.hurufList.length > 1) _hurufTabs(widget.hurufList),
+          if (widget.hurufList.length > 1) _hurufTabs(),
           const SizedBox(height: 16),
-          _hurufPreview(widget.hurufList[_currentIndex]),
+          _hurufPreview(current),
           const SizedBox(height: 24),
           _recordControls(),
           const SizedBox(height: 20),

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class SukuKataProgressService {
-  static const String baseUrl = 'http://192.168.1.141:4000';
+  static const String baseUrl = 'http://10.71.164.20:4000';
 
   static Future<Map<String, dynamic>> getProgress() async {
     final headers = await AuthService.authHeaders();

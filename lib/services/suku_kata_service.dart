@@ -88,7 +88,7 @@ class SukuKataQuestion {
 }
 
 class SukuKataService {
-  static const String baseUrl = 'http://192.168.1.141:4000';
+  static const String baseUrl = 'http://10.71.164.20:4000';
 
   static Future<SukuKataLevelsPayload> getLevels() async {
     final headers = await AuthService.authHeaders();

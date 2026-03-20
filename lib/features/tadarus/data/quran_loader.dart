@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../models/surah.dart';
 
-const String baseUrl = "http://192.168.1.141:4000/quran";
+const String baseUrl = "http://10.71.164.20:4000/quran";
 
 // Ambil daftar surah
 Future<List<Surah>> loadQuranDataset() async {
