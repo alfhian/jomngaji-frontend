@@ -20,6 +20,7 @@ class LatihanSukuKataPage extends StatefulWidget {
 class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
     with TickerProviderStateMixin {
   static const int _maxQuestions = 5;
+  static const double _passScore = 70;
 
   bool _loading = true;
   List<SukuKataQuestion> _questions = [];
@@ -27,6 +28,11 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
 
   int _questionIndex = 0;
   int _correctCount = 0;
+  int _streak = 0;
+  int _bestStreak = 0;
+
+  String? _selectedOption;
+  bool _lockedAnswer = false;
 
   late AnimationController correctAnim;
   late AnimationController wrongAnim;
@@ -37,14 +43,14 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
 
     correctAnim = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 360),
       lowerBound: 0.0,
       upperBound: 1.0,
     );
 
     wrongAnim = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 260),
       lowerBound: 0.0,
       upperBound: 1.0,
     );
@@ -97,24 +103,58 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
   }
 
   Future<void> _checkAnswer(String answer) async {
+    if (_lockedAnswer) return;
+
     final current = _sessionQuestions[_questionIndex];
     final benar = answer.toUpperCase() == current.latin.toUpperCase();
 
+    setState(() {
+      _lockedAnswer = true;
+      _selectedOption = answer;
+      if (benar) {
+        _correctCount++;
+        _streak++;
+        _bestStreak = max(_bestStreak, _streak);
+      } else {
+        _streak = 0;
+      }
+    });
+
     if (benar) {
-      _correctCount++;
       correctAnim.forward(from: 0);
     } else {
       wrongAnim.forward(from: 0);
     }
 
-    await Future.delayed(const Duration(milliseconds: 600));
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          duration: const Duration(milliseconds: 850),
+          backgroundColor: benar ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
+          content: Text(
+            benar
+                ? '✅ Benar! Streak kamu $_streak'
+                : '❌ Salah. Jawaban benar: ${current.latin}',
+            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+        ),
+      );
+
+    await Future.delayed(const Duration(milliseconds: 720));
 
     if (_questionIndex >= _sessionQuestions.length - 1) {
       await _finishLevel();
       return;
     }
 
-    setState(() => _questionIndex++);
+    setState(() {
+      _questionIndex++;
+      _lockedAnswer = false;
+      _selectedOption = null;
+    });
   }
 
   Future<void> _finishLevel() async {
@@ -144,6 +184,8 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
   }
 
   Widget _resultDialog(double score, int xpGain, int total) {
+    final passed = score >= _passScore;
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 30),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
@@ -157,20 +199,31 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              score >= 50 ? 'Bagus Sekali!' : 'Ayo Coba Lagi',
+              passed ? 'MasyaAllah, Lolos!' : 'Semangat, Coba Lagi!',
               style: GoogleFonts.poppins(
-                fontSize: 26,
+                fontSize: 24,
                 fontWeight: FontWeight.w800,
-                color: score >= 50 ? Colors.green : Colors.red,
+                color: passed ? Colors.green : Colors.red,
               ),
             ),
             const SizedBox(height: 10),
             Text(
-              'Benar: $_correctCount dari $total\n+ $xpGain XP',
+              'Benar: $_correctCount dari $total\nSkor: ${score.toStringAsFixed(0)}%\n+ $xpGain XP',
               style: GoogleFonts.poppins(fontSize: 16),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 8),
+            Text(
+              passed
+                  ? 'Level berikutnya otomatis terbuka ✅'
+                  : 'Butuh minimal ${_passScore.toInt()}% untuk membuka level berikutnya.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 22),
             GestureDetector(
               onTap: () {
                 Navigator.pop(context);
@@ -204,24 +257,49 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
   }
 
   Widget _buildOption(String label) {
+    final current = _sessionQuestions[_questionIndex];
+    final isCorrect = label.toUpperCase() == current.latin.toUpperCase();
+    final isSelected = _selectedOption == label;
+
+    Color bg = const Color(0xFFE8FFF0);
+    Color border = const Color(0xFF50D1A0);
+    Color text = const Color(0xFF42C88A);
+    IconData? icon;
+
+    if (_lockedAnswer) {
+      if (isCorrect) {
+        bg = const Color(0xFFD9F8E5);
+        border = const Color(0xFF1E915B);
+        text = const Color(0xFF1E915B);
+        icon = Icons.check_circle_rounded;
+      } else if (isSelected) {
+        bg = const Color(0xFFFFE2E2);
+        border = const Color(0xFFD84343);
+        text = const Color(0xFFD84343);
+        icon = Icons.cancel_rounded;
+      } else {
+        bg = Colors.white.withOpacity(0.75);
+        border = Colors.grey.shade300;
+        text = Colors.grey.shade600;
+      }
+    }
+
     return ScaleTransition(
-      scale: Tween(begin: 1.0, end: 1.12).animate(
+      scale: Tween(begin: 1.0, end: 1.08).animate(
         CurvedAnimation(
-          parent: correctAnim,
-          curve: Curves.elasticOut,
+          parent: isSelected && _lockedAnswer && isCorrect ? correctAnim : wrongAnim,
+          curve: Curves.easeOutBack,
         ),
       ),
       child: GestureDetector(
         onTap: () => _checkAnswer(label),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFFE8FFF0),
+            color: bg,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: const Color(0xFF50D1A0),
-              width: 1.2,
-            ),
+            border: Border.all(color: border, width: 1.2),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -230,15 +308,22 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
               ),
             ],
           ),
-          child: Center(
-            child: Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 23,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF42C88A),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w700,
+                  color: text,
+                ),
               ),
-            ),
+              if (icon != null) ...[
+                const SizedBox(width: 8),
+                Icon(icon, color: text, size: 20),
+              ],
+            ],
           ),
         ),
       ),
@@ -277,29 +362,51 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
         backgroundColor: const Color(0xFF50D1A0),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.fromLTRB(22, 18, 22, 16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_sessionQuestions.length, (i) {
-                final active = i <= _questionIndex;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 350),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: active ? 28 : 16,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: active ? const Color(0xFF42C88A) : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(20),
+              children: [
+                Expanded(
+                  child: LinearProgressIndicator(
+                    value: (_questionIndex + 1) / _sessionQuestions.length,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFF42C88A),
+                    backgroundColor: Colors.grey.shade200,
                   ),
-                );
-              }),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '${_questionIndex + 1}/${_sessionQuestions.length}',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Streak: $_streak 🔥',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF2F9E6E),
+                  ),
+                ),
+                Text(
+                  'Best: $_bestStreak',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 40),
+              padding: const EdgeInsets.symmetric(vertical: 36),
               decoration: BoxDecoration(
                 color: const Color(0xFFF1FFF6),
                 borderRadius: BorderRadius.circular(28),
@@ -322,15 +429,43 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
             Expanded(
-              child: Column(
-                children: options
-                    .map((opt) => Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: _buildOption(opt),
-                        ))
-                    .toList(),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(14, 18, 14, 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  image: const DecorationImage(
+                    image: AssetImage('assets/images/background-mengaji.png'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    color: Colors.white.withOpacity(0.82),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Pilih bacaan latin yang tepat',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ...options
+                          .map((opt) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _buildOption(opt),
+                              ))
+                          .toList(),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
