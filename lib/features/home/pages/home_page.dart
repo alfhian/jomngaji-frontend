@@ -4,7 +4,8 @@ import '../../../core/widgets/section_title.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/category_list.dart';
 import '../widgets/header_section.dart';
-import '../widgets/popular_course_list.dart';
+import '../widgets/home_daily_quiz_card.dart';
+import '../widgets/tadarus_card.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -29,13 +30,26 @@ class HomePage extends StatelessWidget {
                     SizedBox(height: 12),
                     CategoryList(),
                     SizedBox(height: 24),
-                    SectionTitle(title: 'Kelas Populer'),
+                    SectionTitle(title: 'Quiz Harian', showSeeAll: false),
                     SizedBox(height: 12),
-                    PopularCourseList(),
-                    SizedBox(height: 80),
+                    HomeDailyQuizCard(),
+                    SizedBox(height: 24),
+                    SectionTitle(title: 'Tadarus AI', showSeeAll: false),
+                    SizedBox(height: 12),
+                    TadarusCard(),
+                    SizedBox(height: 18),
                   ],
                 ),
-              )
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: Image.asset(
+                  'assets/images/background-mengaji.png',
+                  fit: BoxFit.fill,
+                  height: 90,
+                ),
+              ),
+              const SizedBox(height: 90),
             ],
           ),
         ),
