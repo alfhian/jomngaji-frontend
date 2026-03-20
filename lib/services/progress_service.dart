@@ -8,7 +8,7 @@ class ProgressService {
   static const int passingScore = 50;
 
   // -----------------------------
-  // SCORE / XP (existing)
+  // SCORE / XP
   // -----------------------------
   static Future<void> saveExamScore(int score) async {
     final prefs = await SharedPreferences.getInstance();
@@ -58,14 +58,66 @@ class ProgressService {
     }
   }
 
-  // -----------------------------
-  // RESET (opsional)
-  // -----------------------------
   static Future<void> resetAllLessons() async {
     final prefs = await SharedPreferences.getInstance();
     for (int i = 1; i <= maxLessons; i++) {
       await prefs.remove(_lessonScoreKey(i));
       await prefs.remove(_lessonUnlockedKey(i));
     }
+  }
+
+  // -----------------------------
+  // TADARUS PROGRESS (NEW)
+  // -----------------------------
+  static Future<void> saveTadarusProgress({
+    required String surah,
+    required int ayat,
+    required double progress,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("tadarus_surah", surah);
+    await prefs.setInt("tadarus_ayat", ayat);
+    await prefs.setDouble("tadarus_progress", progress);
+  }
+
+  static Future<Map<String, dynamic>?> getTadarusProgress() async {
+    final prefs = await SharedPreferences.getInstance();
+    final surah = prefs.getString("tadarus_surah");
+    final ayat = prefs.getInt("tadarus_ayat");
+    final progress = prefs.getDouble("tadarus_progress");
+    if (surah == null || ayat == null || progress == null) return null;
+    return {
+      "surah": surah,
+      "ayat": ayat,
+      "progress": progress,
+    };
+  }
+
+  // -----------------------------
+  // GOALS KHATAM (NEW)
+  // -----------------------------
+  static Future<void> saveTadarusGoal(int months) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt("tadarus_goal_months", months);
+  }
+
+  static Future<int> getTadarusGoalMonths() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt("tadarus_goal_months") ?? 6; // default 6 bulan
+  }
+
+  static int calculateDailyTarget(int monthsGoal, {int totalAyat = 6236}) {
+    return (totalAyat / (monthsGoal * 30)).ceil();
+  }
+
+  // -----------------------------
+  // RESET TADARUS
+  // -----------------------------
+  static Future<void> resetTadarus() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove("tadarus_surah");
+    await prefs.remove("tadarus_ayat");
+    await prefs.remove("tadarus_progress");
+    await prefs.remove("tadarus_goal_months");
   }
 }
