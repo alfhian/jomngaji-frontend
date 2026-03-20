@@ -71,6 +71,41 @@ class HijaiyahService {
     return parsed.clamp(0.0, 1.0);
   }
 
+  static Future<void> submitLessonProgress({
+    required int lessonId,
+    required int completedLetters,
+    required double score,
+  }) async {
+    final headers = await AuthService.authHeaders(
+      extra: {'Content-Type': 'application/json'},
+    );
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/hijaiyah/lessons/$lessonId/submit'),
+      headers: headers,
+      body: jsonEncode({
+        'completed_letters': completedLetters,
+        'score': score,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal submit progress hijaiyah: ${response.body}');
+    }
+  }
+
+  static Future<void> unlockLesson(int lessonId) async {
+    final headers = await AuthService.authHeaders();
+    final response = await http.post(
+      Uri.parse('$baseUrl/hijaiyah/lessons/$lessonId/unlock'),
+      headers: headers,
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal unlock lesson hijaiyah: ${response.body}');
+    }
+  }
+
   static Future<HijaiyahLessonsPayload> getLessons() async {
     final headers = await AuthService.authHeaders();
 
