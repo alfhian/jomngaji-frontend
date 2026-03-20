@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+
 import '../../../core/widgets/custom_gradient_appbar.dart';
-import '../../../services/progress_service.dart'; // Untuk progress tracking
+import '../../auth/services/auth_service.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -12,149 +16,211 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  int totalXP = 0;  // Pastikan menggunakan satu variabel untuk XP
-  int examScore = 0;
-  List<bool> levelsCompleted = List.generate(10, (index) => false); // 10 level
-  List<FlSpot> xpData = [];
+  static const _baseUrl = 'http://192.168.1.141:4000';
+
+  bool _loading = true;
+  String _name = 'Pengguna';
+
+  double _iqra = 0;
+  double _tajwid = 0;
+  double _tilawah = 0;
+  double _tahfidz = 0;
+  double _tadarus = 0;
 
   @override
   void initState() {
     super.initState();
-    loadData();  // Pastikan loadData dipanggil saat halaman dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfileProgress();
+    });
   }
 
-  void loadData() async {
-    totalXP = await ProgressService.getXP();  // Ambil XP dari SharedPreferences
-    examScore = await ProgressService.getExamScore();  // Ambil skor tes dari SharedPreferences
+  double _normalizeProgress(dynamic value) {
+    final raw = double.tryParse('${value ?? 0}') ?? 0;
+    if (raw > 1) return (raw / 100).clamp(0, 1);
+    return raw.clamp(0, 1);
+  }
 
-    // Update grafik dengan XP yang benar-benar terbaru
-    xpData = [
-      FlSpot(0, totalXP.toDouble()),  // Grafik menunjukkan XP yang aktual
-      FlSpot(1, totalXP.toDouble() + 10),
-      FlSpot(2, totalXP.toDouble() + 20),
-      FlSpot(3, totalXP.toDouble() + 30),
-    ];
+  Future<void> _loadProfileProgress() async {
+    setState(() => _loading = true);
+    try {
+      final token = await AuthService.getAccessToken();
+      if (token == null || token.isEmpty) {
+        throw Exception('Session login tidak ditemukan. Silakan login ulang.');
+      }
 
-    setState(() {});  // Memperbarui UI dengan data terbaru
+      final headers = {'Authorization': 'Bearer $token'};
+      final userName = (await AuthService.getUserName()) ?? 'Pengguna';
+
+      final avgRes = await http.get(
+        Uri.parse('$_baseUrl/progress/average'),
+        headers: headers,
+      );
+
+      final tadarusRes = await http.get(
+        Uri.parse('$_baseUrl/tadarus/global-progress'),
+        headers: headers,
+      );
+
+      if (avgRes.statusCode != 200) {
+        throw Exception('Gagal mengambil progress average: ${avgRes.body}');
+      }
+      if (tadarusRes.statusCode != 200) {
+        throw Exception('Gagal mengambil progress tadarus: ${tadarusRes.body}');
+      }
+
+      final avgJson = jsonDecode(avgRes.body) as Map<String, dynamic>;
+      final tadarusJson = jsonDecode(tadarusRes.body) as Map<String, dynamic>;
+
+      final tadarusProgress = tadarusJson['percentage'] ??
+          ((tadarusJson['total_ayah'] ?? 0) == 0
+              ? 0
+              : ((tadarusJson['completed_ayah'] ?? 0) /
+                  (tadarusJson['total_ayah'] ?? 1)));
+
+      setState(() {
+        _name = userName;
+        _iqra = _normalizeProgress(avgJson['iqra_avg']);
+        _tajwid = _normalizeProgress(avgJson['tajwid_avg']);
+        _tilawah = _normalizeProgress(avgJson['tilawah_avg']);
+        _tahfidz = _normalizeProgress(avgJson['tahfidz_avg']);
+        _tadarus = _normalizeProgress(tadarusProgress);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal load profile: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Widget _progressTile({
+    required String label,
+    required double value,
+    required Color color,
+  }) {
+    final percent = (value * 100).toStringAsFixed(1);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  )),
+              Text('$percent%',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  )),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: value,
+              minHeight: 10,
+              backgroundColor: Colors.grey.shade300,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomGradientAppBar(title: 'Profil Pengguna'),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Profil & Progress',
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+      extendBody: true,
+      bottomNavigationBar: const AppBottomNav(currentIndex: 3),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadProfileProgress,
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE7FFF2),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.account_circle,
+                            size: 50, color: Color(0xFF42C88A)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _name,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Progress belajar dari Iqra sampai Tadarus',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Progress Pembelajaran',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _progressTile(
+                      label: 'Iqra',
+                      value: _iqra,
+                      color: const Color(0xFF42C88A)),
+                  _progressTile(
+                      label: 'Tajwid',
+                      value: _tajwid,
+                      color: Colors.blueAccent),
+                  _progressTile(
+                      label: 'Tilawah',
+                      value: _tilawah,
+                      color: Colors.deepPurple),
+                  _progressTile(
+                      label: 'Tahfidz',
+                      value: _tahfidz,
+                      color: Colors.orange),
+                  _progressTile(
+                      label: 'Tadarus',
+                      value: _tadarus,
+                      color: Colors.teal),
+                  const SizedBox(height: 80),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            _buildProfileInfo(),
-            const SizedBox(height: 20),
-            _buildLevelProgress(),
-            const SizedBox(height: 20),
-            _buildXpChart(),
-            const SizedBox(height: 20),
-            _buildExamScore(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileInfo() {
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(Icons.account_circle, size: 50, color: Color(0xFF42C88A)),
-            const SizedBox(width: 20),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Nama Pengguna', style: GoogleFonts.poppins(fontSize: 18)),
-                const SizedBox(height: 8),
-                Text('XP: $totalXP', style: GoogleFonts.poppins(fontSize: 14)),  // Gunakan totalXP yang sama
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLevelProgress() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Level Progress', style: GoogleFonts.poppins(fontSize: 18)),
-        const SizedBox(height: 8),
-        Wrap(
-          children: List.generate(10, (index) {
-            return Icon(
-              levelsCompleted[index] ? Icons.check_circle : Icons.circle,
-              color: levelsCompleted[index] ? Colors.green : Colors.grey,
-            );
-          }),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildXpChart() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Grafik XP', style: GoogleFonts.poppins(fontSize: 18)),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 200,
-          child: LineChart(
-            LineChartData(
-              gridData: FlGridData(show: false),
-              titlesData: FlTitlesData(show: false),
-              borderData: FlBorderData(show: false),
-              minX: 0,
-              maxX: 3,
-              minY: 0,
-              maxY: totalXP + 50,  // Gunakan totalXP yang sama untuk grafik
-              lineBarsData: [
-                LineChartBarData(
-                  spots: xpData,
-                  isCurved: true,
-                  colors: [Color(0xFF42C88A)],
-                  barWidth: 4,
-                  isStrokeCapRound: true,
-                  belowBarData: BarAreaData(show: false),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExamScore() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Skor Tes Akhir', style: GoogleFonts.poppins(fontSize: 18)),
-        const SizedBox(height: 8),
-        Text(
-          'Skor kamu: $examScore',
-          style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-      ],
     );
   }
 }

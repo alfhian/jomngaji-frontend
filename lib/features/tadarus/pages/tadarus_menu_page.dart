@@ -3,12 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/widgets/custom_gradient_appbar.dart';
 import '../../../routes/app_routes.dart';
 import '../../../models/surah.dart';
+import '../../home/widgets/app_bottom_nav.dart';
 import '../data/quran_loader.dart';
+import '../../auth/services/auth_service.dart';
 
 class TadarusMenuPage extends StatefulWidget {
   const TadarusMenuPage({super.key});
@@ -66,20 +67,13 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
   }
 
   // ================= API =================
-
-  Future<int> _getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('userId') ?? 0;
-  }
-
   Future<void> _loadLastActivity() async {
     try {
-      final userId = await _getUserId();
+      final headers = await AuthService.authHeaders();
 
       final res = await http.get(
-        Uri.parse(
-          'http://192.168.1.141:4000/tadarus/last-activity?user_id=$userId',
-        ),
+        Uri.parse('http://192.168.1.141:4000/tadarus/last-activity'),
+        headers: headers,
       );
 
       if (res.statusCode != 200) return;
@@ -108,12 +102,11 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
 
   Future<void> _loadGlobalProgress() async {
     try {
-      final userId = await _getUserId();
+      final headers = await AuthService.authHeaders();
 
       final res = await http.get(
-        Uri.parse(
-          'http://192.168.1.141:4000/tadarus/global-progress?user_id=$userId',
-        ),
+        Uri.parse('http://192.168.1.141:4000/tadarus/global-progress'),
+        headers: headers,
       );
 
       if (res.statusCode != 200) return;
@@ -139,7 +132,7 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
 
   Future<void> _loadSurahs() async {
     try {
-      final userId = await _getUserId();
+      final headers = await AuthService.authHeaders();
       final data = await loadQuranDataset();
 
       final List<Surah> result = [];
@@ -150,9 +143,9 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
         try {
           final res = await http.get(
             Uri.parse(
-              'http://192.168.1.141:4000/tadarus/progress'
-              '?user_id=$userId&surah=${s.number}',
+              'http://192.168.1.141:4000/tadarus/progress?surah=${s.number}',
             ),
+            headers: headers,
           );
 
           if (res.statusCode == 200) {
@@ -200,7 +193,9 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
+      extendBody: true,
       appBar: const CustomGradientAppBar(title: "Tadarus"),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 1),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
