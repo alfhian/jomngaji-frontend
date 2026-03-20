@@ -72,7 +72,7 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
       final headers = await AuthService.authHeaders();
 
       final res = await http.get(
-        Uri.parse('http://192.168.1.141:4000/tadarus/last-activity'),
+        Uri.parse('http://10.71.164.20:4000/tadarus/last-activity'),
         headers: headers,
       );
 
@@ -105,7 +105,7 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
       final headers = await AuthService.authHeaders();
 
       final res = await http.get(
-        Uri.parse('http://192.168.1.141:4000/tadarus/global-progress'),
+        Uri.parse('http://10.71.164.20:4000/tadarus/global-progress'),
         headers: headers,
       );
 
@@ -143,7 +143,7 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
         try {
           final res = await http.get(
             Uri.parse(
-              'http://192.168.1.141:4000/tadarus/progress?surah=${s.number}',
+              'http://10.71.164.20:4000/tadarus/progress?surah=${s.number}',
             ),
             headers: headers,
           );

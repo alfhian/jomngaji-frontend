@@ -97,7 +97,7 @@ class PremiumLockedException implements Exception {
 }
 
 class SukuKataService {
-  static const String baseUrl = 'http://192.168.1.141:4000';
+  static const String baseUrl = 'http://10.71.164.20:4000';
 
   static double _normalizeProgress(dynamic raw) {
     final parsed = double.tryParse('${raw ?? 0}') ?? 0;
