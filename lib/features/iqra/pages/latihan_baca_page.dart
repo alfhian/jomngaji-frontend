@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../../core/widgets/custom_gradient_appbar.dart';
 import '../../../routes/app_routes.dart';
 import '../widgets/animated_iqra_card.dart';
@@ -8,138 +10,167 @@ class LatihanBacaPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final menus = [
+      (
+        title: 'Latihan Harakat',
+        description: 'Latihan Fathah, Kasrah, Dhammah dengan soal interaktif.',
+        route: AppRoutes.latihanHarakat,
+        icon: Icons.menu_book_rounded,
+        accent: const Color(0xFF7C3AED),
+      ),
+      (
+        title: 'Latihan Suku Kata',
+        description: 'Latihan gabungan huruf dan harakat secara bertahap.',
+        route: AppRoutes.latihanSukuKataMenu,
+        icon: Icons.auto_stories_rounded,
+        accent: const Color(0xFFEC4899),
+      ),
+      (
+        title: 'Dengarkan & Tebak',
+        description: 'Asah pendengaran dengan menebak huruf dari audio.',
+        route: AppRoutes.latihanDengar,
+        icon: Icons.volume_up_rounded,
+        accent: const Color(0xFF22A06B),
+      ),
+    ];
+
     return Scaffold(
-      appBar: const CustomGradientAppBar(title: "Latihan Baca"),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      appBar: const CustomGradientAppBar(title: 'Latihan Baca'),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF7F9FF), Color(0xFFEFF7FF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+          children: [
+            _introCard(),
+            const SizedBox(height: 18),
+            ...menus.map(
+              (item) => _menuItem(
+                context,
+                title: item.title,
+                description: item.description,
+                route: item.route,
+                icon: item.icon,
+                accent: item.accent,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _introCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF155EEF), Color(0xFF22A06B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33155EEF),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 10),
-          _sectionTitle("Latihan Dasar"),
-          const SizedBox(height: 15),
-
-          // --------------------------
-          // LATIHAN HARAKAT
-          // --------------------------
-          _menuItem(
-            context,
-            color: const Color(0xFFEDE7FF),
-            iconColor: const Color(0xFF7A49FF),
-            title: "Latihan Harakat",
-            subtitle: "Fathah, Kasrah, Dhammah",
-            icon: Icons.menu_book_rounded,
-            route: AppRoutes.latihanHarakat,
+          Row(
+            children: [
+              const Icon(Icons.local_library_rounded, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                'Latihan Dasar',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ],
           ),
-
-          // --------------------------
-          // LATIHAN SUKU KATA
-          // --------------------------
-          _menuItem(
-            context,
-            color: const Color(0xFFFFE4E9),
-            iconColor: const Color(0xFFFF577F),
-            title: "Latihan Suku Kata",
-            subtitle: "Gabungan huruf & harakat",
-            icon: Icons.auto_stories_rounded,
-            route: AppRoutes.latihanSukuKataMenu,
+          const SizedBox(height: 8),
+          Text(
+            'Perkuat kemampuan baca Iqra dari harakat, suku kata, sampai latihan mendengar.',
+            style: GoogleFonts.poppins(
+              color: Colors.white.withOpacity(0.95),
+              fontSize: 13,
+              height: 1.45,
+            ),
           ),
-
-          // --------------------------
-          // DENGARKAN & TEBAK
-          // --------------------------
-          _menuItem(
-            context,
-            color: const Color(0xFFE4FFF5),
-            iconColor: const Color(0xFF20C997),
-            title: "Dengarkan & Tebak",
-            subtitle: "Tebak huruf dari audio",
-            icon: Icons.volume_up_rounded,
-            route: AppRoutes.latihanDengar,
-          ),
-
-          const SizedBox(height: 25),
         ],
       ),
     );
   }
 
-  // --------------------------
-  // SECTION TITLE
-  // --------------------------
-  Widget _sectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-  // --------------------------
-  // CUSTOM CARD ITEM (SAMA PERSIS DENGAN IQRA DASAR)
-  // --------------------------
   Widget _menuItem(
     BuildContext context, {
-    required Color color,
-    required Color iconColor,
     required String title,
-    required String subtitle,
-    required IconData icon,
+    required String description,
     required String route,
+    required IconData icon,
+    required Color accent,
   }) {
     return AnimatedIqraCard(
       onTap: () => Navigator.pushNamed(context, route),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.all(18),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(26),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: accent.withOpacity(0.18)),
+          boxShadow: const [
+            BoxShadow(color: Color(0x12000000), blurRadius: 14, offset: Offset(0, 6)),
+          ],
         ),
         child: Row(
           children: [
-            // Icon Bubble
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
-                shape: BoxShape.circle,
+                color: accent.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 28, color: iconColor),
+              child: Icon(icon, color: accent),
             ),
-
-            const SizedBox(width: 16),
-
-            // Text
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
+                    description,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12.8,
+                      color: const Color(0xFF475569),
+                      height: 1.45,
                     ),
                   ),
                 ],
               ),
             ),
-
-            // Arrow
-            const Icon(
-              Icons.chevron_right_rounded,
-              size: 30,
-              color: Colors.black26,
-            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: accent),
           ],
         ),
       ),
