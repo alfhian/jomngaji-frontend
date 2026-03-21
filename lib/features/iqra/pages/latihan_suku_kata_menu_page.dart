@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/widgets/custom_gradient_appbar.dart';
 import '../../../services/suku_kata_service.dart';
 import 'latihan_suku_kata_page.dart';
 
@@ -50,114 +51,79 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: null,
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadLevels,
-              child: ListView(
-                children: [
-                  _heroSection(context),
-                  const SizedBox(height: 20),
-                  _descriptionSection(),
-                  const SizedBox(height: 22),
-                  _progressSection(),
-                  const SizedBox(height: 25),
-                  _levelList(context),
-                  const SizedBox(height: 30),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _heroSection(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
-        image: const DecorationImage(
-          image: AssetImage('assets/images/hijaiyah_banner_2.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(32),
-            bottomRight: Radius.circular(32),
-          ),
+      appBar: const CustomGradientAppBar(title: 'Latihan Suku Kata'),
+      body: Container(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
+            colors: [Color(0xFFF7F9FF), Color(0xFFEFF7FF)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.black.withOpacity(0.05),
-              Colors.black.withOpacity(0.40),
+          ),
+        ),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadLevels,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                  children: [
+                    _introCard(),
+                    const SizedBox(height: 18),
+                    _progressCard(),
+                    const SizedBox(height: 14),
+                    if (_levels.isEmpty)
+                      _emptyCard()
+                    else
+                      ..._levels.map((level) => _levelCard(context, level: level)),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _introCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF155EEF), Color(0xFF22A06B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33155EEF),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.spellcheck_rounded, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                'Latihan Bertahap',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
             ],
           ),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-              ),
-            ),
-            const SizedBox(height: 28),
-            Text(
-              'Latihan Suku Kata',
-              style: GoogleFonts.poppins(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Mengenal dan Mengucapkan Suku Kata',
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 32,
-                height: 1.25,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _descriptionSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          const SizedBox(height: 8),
           Text(
-            'Belajar membaca, mengenal, dan mengucapkan suku kata.',
+            'Pilih level suku kata dari mudah ke menengah, lalu selesaikan untuk membuka level berikutnya.',
             style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${_levels.length} Level Pelajaran',
-            style: GoogleFonts.poppins(
+              color: Colors.white.withOpacity(0.95),
               fontSize: 13,
-              color: Colors.black54,
+              height: 1.45,
             ),
           ),
         ],
@@ -165,35 +131,29 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
     );
   }
 
-  Widget _progressSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+  Widget _progressCard() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFDBEAFE)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Progress',
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
+            'Progress ${(_progressValue * 100).toInt()}%',
+            style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(99),
             child: LinearProgressIndicator(
               value: _progressValue,
-              backgroundColor: Colors.grey.shade300,
               minHeight: 8,
-              color: const Color(0xFF50D1A0),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${(_progressValue * 100).toInt()}% selesai',
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: Colors.black54,
+              backgroundColor: const Color(0xFFE2E8F0),
+              color: const Color(0xFF22A06B),
             ),
           ),
         ],
@@ -201,29 +161,17 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
     );
   }
 
-  Widget _levelList(BuildContext context) {
-    if (_levels.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Text(
-          'Belum ada level dari server.',
-          style: GoogleFonts.poppins(fontSize: 14),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: _levels.map((level) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: _levelCard(
-              context,
-              level: level,
-            ),
-          );
-        }).toList(),
+  Widget _emptyCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Text(
+        'Belum ada level dari server.',
+        style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF475569)),
       ),
     );
   }
@@ -233,74 +181,93 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
     required SukuKataLevel level,
   }) {
     final unlocked = level.isUnlocked;
+    final accent = unlocked ? const Color(0xFF22A06B) : const Color(0xFF64748B);
 
-    return GestureDetector(
-      onTap: unlocked
-          ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => LatihanSukuKataPage(level: level),
-                ),
-              ).then((_) => _loadLevels())
-          : null,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: unlocked ? const Color(0xFFE7FFF2) : Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: unlocked ? Colors.transparent : Colors.grey.shade300,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: unlocked
+            ? () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LatihanSukuKataPage(level: level),
+                  ),
+                ).then((_) => _loadLevels())
+            : null,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: accent.withOpacity(0.18)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x12000000),
+                blurRadius: 14,
+                offset: Offset(0, 6),
+              ),
+            ],
           ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              unlocked ? Icons.menu_book_rounded : Icons.lock_rounded,
-              size: 26,
-              color: unlocked ? const Color(0xFF50D1A0) : Colors.grey,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    level.title,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    level.description.isEmpty
-                        ? 'Soal: ${level.totalQuestions}'
-                        : level.description,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (level.isPremium)
+          child: Row(
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.amber.shade100,
-                  borderRadius: BorderRadius.circular(12),
+                  color: accent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Text(
-                  'PREMIUM',
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.orange.shade800,
-                  ),
+                child: Icon(
+                  unlocked ? Icons.menu_book_rounded : Icons.lock_rounded,
+                  color: accent,
                 ),
               ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      level.title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      level.description.isEmpty ? 'Soal: ${level.totalQuestions}' : level.description,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12.8,
+                        color: const Color(0xFF475569),
+                        height: 1.45,
+                      ),
+                    ),
+                    if (level.isPremium) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'PREMIUM',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: accent),
+            ],
+          ),
         ),
       ),
     );
