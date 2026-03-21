@@ -1,6 +1,6 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../../../core/widgets/custom_gradient_appbar.dart';
 
 class MateriMadPage extends StatefulWidget {
@@ -14,18 +14,22 @@ class _MateriMadPageState extends State<MateriMadPage> {
   final AudioPlayer _player = AudioPlayer();
   String? _currentPlaying;
 
+  @override
+  void initState() {
+    super.initState();
+    _player.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _currentPlaying = null);
+    });
+  }
+
   Future<void> _playAudio(String fileName) async {
     if (_currentPlaying == fileName) {
       await _player.stop();
       setState(() => _currentPlaying = null);
-    } else {
-      await _player.play(AssetSource("audio/tajwid/mad-$fileName.mp3"));
-      setState(() => _currentPlaying = fileName);
-
-      _player.onPlayerComplete.listen((_) {
-        setState(() => _currentPlaying = null);
-      });
+      return;
     }
+    await _player.play(AssetSource('audio/tajwid/mad-$fileName.mp3'));
+    setState(() => _currentPlaying = fileName);
   }
 
   @override
@@ -37,67 +41,59 @@ class _MateriMadPageState extends State<MateriMadPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F7FF),
-      appBar: const CustomGradientAppBar(title: "Mad (Panjang Bacaan)"),
-      body: SafeArea(
+      appBar: const CustomGradientAppBar(title: 'Mad (Panjang Bacaan)'),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF8FAFF), Color(0xFFF5F3FF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: ListView(
+          padding: const EdgeInsets.all(20),
           children: [
-            // konten utama dengan padding
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _introCard(),
-                  const SizedBox(height: 20),
-
-                  _hukumCard(
-                    title: "Mad Thabi’i",
-                    description: "Mad asli, panjang 2 harakat. Terjadi bila ada huruf mad (ا، و، ي) tanpa hamzah/sukun setelahnya.",
-                    example: "قَالَ",
-                    highlight: ["ا"],
-                    audioFile: "thabi-i",
-                  ),
-                  _hukumCard(
-                    title: "Mad Wajib Muttashil",
-                    description: "Mad 4–5 harakat, terjadi bila huruf mad bertemu hamzah dalam satu kata.",
-                    example: "جَاءَ",
-                    highlight: ["ا", "ء"],
-                    audioFile: "wajib-muttashil",
-                  ),
-                  _hukumCard(
-                    title: "Mad Jaiz Munfashil",
-                    description: "Mad 4–5 harakat, terjadi bila huruf mad di akhir kata bertemu hamzah di awal kata berikutnya.",
-                    example: "فِيٓ أَنفُسِكُمْ",
-                    highlight: ["ي", "أ"],
-                    audioFile: "jaiz-munfashil",
-                  ),
-                  _hukumCard(
-                    title: "Mad ‘Aridh Lissukun",
-                    description: "Mad 2, 4, atau 6 harakat, terjadi bila huruf mad diakhiri sukun karena waqaf.",
-                    example: "الْعَالَمِينْ",
-                    highlight: ["يْ"],
-                    audioFile: "aridh-lissukun",
-                  ),
-                  _hukumCard(
-                    title: "Mad Lin",
-                    description: "Mad 2, 4, atau 6 harakat, terjadi bila huruf lin (و، ي setelah huruf berharakat fathah) diakhiri sukun karena waqaf.",
-                    example: "خَوْفْ",
-                    highlight: ["وْ"],
-                    audioFile: "lin",
-                  ),
-
-                  const SizedBox(height: 30),
-                ],
-              ),
+            _heroCard(),
+            const SizedBox(height: 16),
+            _hukumCard(
+              title: 'Mad Thabi’i',
+              tag: '2 Harakat',
+              description: 'Mad asli tanpa hamzah/sukun setelah huruf mad.',
+              example: 'قَالَ',
+              highlight: ['ا'],
+              audioFile: 'thabi-i',
             ),
-
-            // 👉 background mengaji ikut scroll, full width
-            Image.asset(
-              "assets/images/background-mengaji.png",
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: 120,
+            _hukumCard(
+              title: 'Mad Wajib Muttashil',
+              tag: '4-5 Harakat',
+              description: 'Huruf mad bertemu hamzah dalam satu kata.',
+              example: 'جَاءَ',
+              highlight: ['ا', 'ء'],
+              audioFile: 'wajib-muttashil',
+            ),
+            _hukumCard(
+              title: 'Mad Jaiz Munfashil',
+              tag: '4-5 Harakat',
+              description: 'Huruf mad di akhir kata bertemu hamzah di awal kata berikutnya.',
+              example: 'فِيٓ أَنفُسِكُمْ',
+              highlight: ['ي', 'أ'],
+              audioFile: 'jaiz-munfashil',
+            ),
+            _hukumCard(
+              title: 'Mad ‘Aridh Lissukun',
+              tag: '2/4/6 Harakat',
+              description: 'Huruf mad diakhiri sukun karena waqaf.',
+              example: 'الْعَالَمِينْ',
+              highlight: ['يْ'],
+              audioFile: 'aridh-lissukun',
+            ),
+            _hukumCard(
+              title: 'Mad Lin',
+              tag: '2/4/6 Harakat',
+              description: 'Huruf lin diakhiri sukun saat waqaf.',
+              example: 'خَوْفْ',
+              highlight: ['وْ'],
+              audioFile: 'lin',
             ),
           ],
         ),
@@ -105,59 +101,80 @@ class _MateriMadPageState extends State<MateriMadPage> {
     );
   }
 
-  Widget _introCard() {
+  Widget _heroCard() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF9C4),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7C3AED), Color(0xFF2563EB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       child: Text(
-        "Mad berarti panjang bacaan. Terjadi bila ada huruf mad (ا، و، ي) atau huruf lin, "
-        "dan dibaca lebih panjang sesuai jenisnya. Ada beberapa macam: Mad Thabi’i, Wajib Muttashil, Jaiz Munfashil, ‘Aridh Lissukun, dan Mad Lin.",
-        style: GoogleFonts.poppins(fontSize: 13, height: 1.4),
+        'Mad mengatur panjang bacaan agar irama tilawah tetap tepat dan indah. Dengarkan contoh setiap jenisnya.',
+        style: GoogleFonts.poppins(color: Colors.white, fontSize: 13, height: 1.45),
       ),
     );
   }
 
   Widget _hukumCard({
     required String title,
+    required String tag,
     required String description,
     required String example,
     required List<String> highlight,
     required String audioFile,
   }) {
+    final isPlaying = _currentPlaying == audioFile;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
+      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1FFF6),
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 5)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: GoogleFonts.poppins(
-                  fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF2E7D32))),
-          const SizedBox(height: 6),
-          Text(description,
-              style: GoogleFonts.poppins(fontSize: 13, color: Colors.black87, height: 1.4)),
+          Row(children: [
+            Expanded(child: Text(title, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700))),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: const Color(0xFFEDE9FE), borderRadius: BorderRadius.circular(999)),
+              child: Text(tag, style: GoogleFonts.poppins(fontSize: 10.5, color: const Color(0xFF6D28D9))),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          Text(description, style: GoogleFonts.poppins(fontSize: 12.8, color: const Color(0xFF475569))),
           const SizedBox(height: 10),
-          RichText(
-            text: TextSpan(
-              style: GoogleFonts.poppins(fontSize: 18, color: Colors.black87),
-              children: _buildHighlightedText(example, highlight),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: RichText(
+              text: TextSpan(
+                style: GoogleFonts.poppins(fontSize: 22, color: const Color(0xFF0F172A)),
+                children: _buildHighlightedText(example, highlight),
+              ),
             ),
           ),
           const SizedBox(height: 12),
-          ElevatedButton.icon(
+          FilledButton.icon(
             onPressed: () => _playAudio(audioFile),
-            icon: Icon(_currentPlaying == audioFile ? Icons.stop : Icons.play_arrow),
-            label: Text(_currentPlaying == audioFile ? "Stop Audio" : "Putar Audio"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF42C88A),
-              foregroundColor: Colors.white,
+            icon: Icon(isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded),
+            label: Text(isPlaying ? 'Stop Audio' : 'Putar Audio'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF6D28D9),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
@@ -174,8 +191,8 @@ class _MateriMadPageState extends State<MateriMadPage> {
       spans.add(TextSpan(
         text: char,
         style: TextStyle(
-          color: match ? const Color(0xFF42C88A) : Colors.black87,
-          fontWeight: match ? FontWeight.bold : FontWeight.normal,
+          color: match ? const Color(0xFF6D28D9) : const Color(0xFF0F172A),
+          fontWeight: match ? FontWeight.w700 : FontWeight.w500,
         ),
       ));
     }
