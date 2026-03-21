@@ -61,16 +61,17 @@ class MateriTajwidPage extends StatelessWidget {
           children: [
             _introCard(),
             const SizedBox(height: 18),
-            ...materials.map((item) => _tajwidItem(
-                  context,
-                  title: item.title,
-                  description: item.description,
-                  route: item.route,
-                  icon: item.icon,
-                  accent: item.accent,
-                )),
-            ],
-          ),
+            ...materials.map(
+              (item) => _tajwidItem(
+                context,
+                title: item.title,
+                description: item.description,
+                route: item.route,
+                icon: item.icon,
+                accent: item.accent,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -133,61 +134,61 @@ class MateriTajwidPage extends StatelessWidget {
     required IconData icon,
     required Color accent,
   }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => Navigator.pushNamed(context, route),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: Ink(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => Navigator.pushNamed(context, route),
+        child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: accent.withOpacity(0.18)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x12000000),
-              blurRadius: 14,
-              offset: Offset(0, 6),
-            ),
-          ],
-        ),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: accent.withOpacity(0.18)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x12000000),
+                blurRadius: 14,
+                offset: Offset(0, 6),
+              ),
+            ],
+          ),
           child: Row(
             children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: accent.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: accent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: accent),
               ),
-              child: Icon(icon, color: accent),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0F172A),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12.8,
-                      color: const Color(0xFF475569),
-                      height: 1.45,
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12.8,
+                        color: const Color(0xFF475569),
+                        height: 1.45,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: accent),
+              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: accent),
             ],
           ),
         ),
