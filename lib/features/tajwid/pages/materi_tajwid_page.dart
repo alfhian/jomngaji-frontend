@@ -69,7 +69,8 @@ class MateriTajwidPage extends StatelessWidget {
                   icon: item.icon,
                   accent: item.accent,
                 )),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -135,10 +136,11 @@ class MateriTajwidPage extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: () => Navigator.pushNamed(context, route),
-      child: Ink(
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: accent.withOpacity(0.18)),
@@ -150,8 +152,8 @@ class MateriTajwidPage extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: [
+          child: Row(
+            children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -186,7 +188,8 @@ class MateriTajwidPage extends StatelessWidget {
               ),
             ),
             Icon(Icons.arrow_forward_ios_rounded, size: 16, color: accent),
-          ],
+            ],
+          ),
         ),
       ),
     );
