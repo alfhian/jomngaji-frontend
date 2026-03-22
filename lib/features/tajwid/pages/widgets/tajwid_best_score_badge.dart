@@ -3,14 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../services/tajwid_quiz_service.dart';
 
+enum TajwidBestScoreSource { quiz, recording }
+
 class TajwidBestScoreBadge extends StatefulWidget {
   final String quizCode;
   final String label;
+  final TajwidBestScoreSource source;
 
   const TajwidBestScoreBadge({
     super.key,
     required this.quizCode,
     this.label = 'Best score',
+    this.source = TajwidBestScoreSource.quiz,
   });
 
   @override
@@ -18,20 +22,21 @@ class TajwidBestScoreBadge extends StatefulWidget {
 }
 
 class _TajwidBestScoreBadgeState extends State<TajwidBestScoreBadge> {
-  static final Map<String, double?> _scoreCache = {};
-
   Future<double?> _load() async {
-    if (_scoreCache.containsKey(widget.quizCode)) {
-      return _scoreCache[widget.quizCode];
-    }
-
     try {
+      if (widget.source == TajwidBestScoreSource.recording) {
+        final combined = await TajwidQuizService.getCombinedProgress(
+          widget.quizCode,
+        );
+        final recording = combined['recording_detail'];
+        if (recording is Map<String, dynamic>) {
+          return _extractBestScore(recording);
+        }
+      }
+
       final progress = await TajwidQuizService.getQuizProgress(widget.quizCode);
-      final value = _extractBestScore(progress);
-      _scoreCache[widget.quizCode] = value;
-      return value;
+      return _extractBestScore(progress);
     } catch (_) {
-      _scoreCache[widget.quizCode] = null;
       return null;
     }
   }

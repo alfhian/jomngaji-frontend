@@ -44,10 +44,11 @@ class HomePage extends StatelessWidget {
                 child: Image.asset(
                   'assets/images/background-mengaji.png',
                   fit: BoxFit.cover,
-                  height: 74,
+                  alignment: Alignment.topCenter,
+                  height: 64,
                 ),
               ),
-              const SizedBox(height: 72),
+              const SizedBox(height: 20),
             ],
           ),
         ),

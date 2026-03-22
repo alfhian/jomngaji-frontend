@@ -212,7 +212,7 @@ class LatihanMimMatiMenuPage extends StatelessWidget {
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
             onTap: () => Navigator.pushNamed(context, AppRoutes.latihanMimMatiRecording),
-            scoreBadge: const TajwidBestScoreBadge(quizCode: 'mim_mati', label: 'Best score praktek'),
+            scoreBadge: const TajwidBestScoreBadge(quizCode: 'mim_mati', label: 'Best score praktek', source: TajwidBestScoreSource.recording),
             unlocked: true,
           ),
         ],

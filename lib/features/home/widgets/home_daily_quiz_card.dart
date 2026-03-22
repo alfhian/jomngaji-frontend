@@ -195,6 +195,7 @@ class _HomeDailyQuizCardState extends State<HomeDailyQuizCard> {
             return GestureDetector(
               onTap: () => _answer(opt),
               child: Container(
+                width: double.infinity,
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
                 decoration: BoxDecoration(

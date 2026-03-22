@@ -140,4 +140,22 @@ class TajwidQuizService {
     final body = jsonDecode(res.body);
     return body is Map<String, dynamic> ? body : <String, dynamic>{};
   }
+
+  static Future<Map<String, dynamic>> getCombinedProgress(String quizCode) async {
+    final headers = await AuthService.authHeaders();
+
+    final res = await http.get(
+      Uri.parse('$_baseUrl/tajwid/$quizCode/combined-progress'),
+      headers: headers,
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception(
+        'Gagal mengambil combined progress tajwid ($quizCode): ${res.body}',
+      );
+    }
+
+    final body = jsonDecode(res.body);
+    return body is Map<String, dynamic> ? body : <String, dynamic>{};
+  }
 }

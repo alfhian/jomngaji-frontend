@@ -214,7 +214,7 @@ class LatihanNunTanwinMenuPage extends StatelessWidget {
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
             onTap: () => Navigator.pushNamed(context, AppRoutes.latihanNunTanwinRecording),
-            scoreBadge: const TajwidBestScoreBadge(quizCode: 'nun_tanwin', label: 'Best score praktek'),
+            scoreBadge: const TajwidBestScoreBadge(quizCode: 'nun_tanwin', label: 'Best score praktek', source: TajwidBestScoreSource.recording),
             unlocked: true,
           ),
         ],

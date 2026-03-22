@@ -214,7 +214,7 @@ class LatihanGhunnahMenuPage extends StatelessWidget {
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
             onTap: () => Navigator.pushNamed(context, AppRoutes.latihanGhunnahRecording),
-            scoreBadge: const TajwidBestScoreBadge(quizCode: 'ghunnah', label: 'Best score praktek'),
+            scoreBadge: const TajwidBestScoreBadge(quizCode: 'ghunnah', label: 'Best score praktek', source: TajwidBestScoreSource.recording),
             unlocked: true,
           ),
         ],
