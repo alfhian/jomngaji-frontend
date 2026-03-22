@@ -89,6 +89,40 @@ class EvaluationApi {
     return _decode(response.body);
   }
 
+  Future<Map<String, dynamic>> evaluateTajwid({
+    required String audioPath,
+    required String targetText,
+    required int lessonId,
+  }) async {
+    final uri = Uri.parse('$baseUrl/evaluate/tajwid');
+    final headers = await _authHeaders();
+
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll(headers);
+
+    request.fields.addAll({
+      'lesson_id': lessonId.toString(),
+      'target_text': targetText,
+    });
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'audio',
+        audioPath,
+        contentType: MediaType('audio', 'aac'),
+      ),
+    );
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode != 200) {
+      throw _error(response.statusCode, response.body);
+    }
+
+    return _decode(response.body);
+  }
+
   Future<Map<String, dynamic>> evaluateTadarusAudio({
     required int surah,
     required int ayah,
