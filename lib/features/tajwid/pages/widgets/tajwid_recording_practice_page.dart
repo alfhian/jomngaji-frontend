@@ -341,6 +341,47 @@ class _TajwidRecordingPracticePageState extends State<TajwidRecordingPracticePag
     );
   }
 
+  Set<String> _highlightCharsForCode(String code) {
+    switch (code) {
+      case 'nun_tanwin':
+        return {'ن', 'ً', 'ٍ', 'ٌ'};
+      case 'mim_mati':
+        return {'م', 'ْ'};
+      case 'mad':
+        return {'ا', 'و', 'ي'};
+      case 'qalqalah':
+        return {'ق', 'ط', 'ب', 'ج', 'د'};
+      case 'ghunnah':
+        return {'ن', 'م'};
+      case 'ikhfa':
+        return {'ن', 'ً', 'ٍ', 'ٌ'};
+      default:
+        return {};
+    }
+  }
+
+  Widget _buildHighlightedPrompt(String text) {
+    final highlights = _highlightCharsForCode(widget.quizCode);
+    final spans = text.split('').map((char) {
+      final highlighted = highlights.contains(char);
+      return TextSpan(
+        text: char,
+        style: TextStyle(
+          color: highlighted ? const Color(0xFF42C88A) : const Color(0xFF1F2937),
+          fontWeight: highlighted ? FontWeight.w800 : FontWeight.w700,
+        ),
+      );
+    }).toList();
+
+    return RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold, height: 1.25),
+        children: spans,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final prompt = widget.prompts[_index];
@@ -408,11 +449,7 @@ class _TajwidRecordingPracticePageState extends State<TajwidRecordingPracticePag
                 borderRadius: BorderRadius.circular(22),
                 boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12)],
               ),
-              child: Text(
-                prompt.arabicText,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
-              ),
+              child: _buildHighlightedPrompt(prompt.arabicText),
             ),
             const SizedBox(height: 16),
             Center(
