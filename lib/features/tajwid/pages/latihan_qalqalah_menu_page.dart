@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../routes/app_routes.dart';
+import 'widgets/tajwid_best_score_badge.dart';
 
 class LatihanQalqalahMenuPage extends StatelessWidget {
   const LatihanQalqalahMenuPage({super.key});
@@ -202,6 +203,7 @@ class LatihanQalqalahMenuPage extends StatelessWidget {
             color: const Color(0xFFE3F2FD),
             iconColor: const Color(0xFF2196F3),
             onTap: () => Navigator.pushNamed(context, AppRoutes.latihanQalqalahPilihan),
+            scoreBadge: const TajwidBestScoreBadge(quizCode: 'qalqalah', label: 'Best score soal'),
             unlocked: true,
           ),
           _exerciseItem(
@@ -212,6 +214,7 @@ class LatihanQalqalahMenuPage extends StatelessWidget {
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
             onTap: () => Navigator.pushNamed(context, AppRoutes.latihanQalqalahRecording),
+            scoreBadge: const TajwidBestScoreBadge(quizCode: 'qalqalah', label: 'Best score praktek'),
             unlocked: true,
           ),
         ],
@@ -230,6 +233,7 @@ class LatihanQalqalahMenuPage extends StatelessWidget {
     required Color color,
     required Color iconColor,
     required VoidCallback onTap,
+    required Widget scoreBadge,
     required bool unlocked,
   }) {
     return GestureDetector(
@@ -273,6 +277,8 @@ class LatihanQalqalahMenuPage extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  scoreBadge,
                 ],
               ),
             ),

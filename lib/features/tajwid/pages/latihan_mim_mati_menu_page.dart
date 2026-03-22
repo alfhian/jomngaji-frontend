@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../routes/app_routes.dart';
+import 'widgets/tajwid_best_score_badge.dart';
 
 class LatihanMimMatiMenuPage extends StatelessWidget {
   const LatihanMimMatiMenuPage({super.key});
@@ -200,6 +201,7 @@ class LatihanMimMatiMenuPage extends StatelessWidget {
             color: const Color(0xFFE3F2FD),
             iconColor: const Color(0xFF2196F3),
             onTap: () => Navigator.pushNamed(context, AppRoutes.latihanMimMatiPilihan),
+            scoreBadge: const TajwidBestScoreBadge(quizCode: 'mim_mati', label: 'Best score soal'),
             unlocked: true,
           ),
           _exerciseItem(
@@ -210,6 +212,7 @@ class LatihanMimMatiMenuPage extends StatelessWidget {
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
             onTap: () => Navigator.pushNamed(context, AppRoutes.latihanMimMatiRecording),
+            scoreBadge: const TajwidBestScoreBadge(quizCode: 'mim_mati', label: 'Best score praktek'),
             unlocked: true,
           ),
         ],
@@ -228,6 +231,7 @@ class LatihanMimMatiMenuPage extends StatelessWidget {
     required Color color,
     required Color iconColor,
     required VoidCallback onTap,
+    required Widget scoreBadge,
     required bool unlocked,
   }) {
     return GestureDetector(
@@ -271,6 +275,8 @@ class LatihanMimMatiMenuPage extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  scoreBadge,
                 ],
               ),
             ),
