@@ -37,6 +37,7 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
   int _correctCount = 0;
   int _streak = 0;
   int _bestStreak = 0;
+  double? _bestScorePercent;
 
   String? _selectedOption;
   bool? _selectedWasCorrect;
@@ -104,6 +105,15 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
         _sessionQuestions =
             questions.take(min(_maxQuestions, questions.length)).toList();
       });
+
+      try {
+        final progress = await TajwidQuizService.getQuizProgress(widget.quizCode);
+        final best = _extractBestScore(progress);
+        if (!mounted) return;
+        setState(() => _bestScorePercent = best);
+      } catch (_) {
+        // Optional: progress bisa belum ada attempt.
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = 'Gagal mengambil soal: $e');
@@ -115,6 +125,30 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
   bool _isCorrect(TajwidQuizQuestion question, String answer) {
     if (question.correctAnswer.trim().isEmpty) return false;
     return _norm(answer) == _norm(question.correctAnswer);
+  }
+
+  double? _extractBestScore(Map<String, dynamic> progress) {
+    double? parsePercent(dynamic raw, {bool percentAlready = true}) {
+      final value = double.tryParse('${raw ?? ''}');
+      if (value == null) return null;
+      final normalized = percentAlready ? value : value * 100;
+      return normalized.clamp(0, 100).toDouble();
+    }
+
+    final bestScore = parsePercent(progress['best_score']);
+    if (bestScore != null) return bestScore;
+
+    final highestScore = parsePercent(progress['highest_score']);
+    if (highestScore != null) return highestScore;
+
+    final highScore = parsePercent(progress['high_score']);
+    if (highScore != null) return highScore;
+
+    final score = parsePercent(progress['score']);
+    if (score != null) return score;
+
+    final progressValue = parsePercent(progress['progress'], percentAlready: false);
+    return progressValue;
   }
 
   Future<bool> _determineCorrect(TajwidQuizQuestion question, String answer) async {
@@ -235,6 +269,8 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
     final passed = score >= _passScore;
     final xpGain = correct * 5;
 
+    _bestScorePercent = max(_bestScorePercent ?? 0, score);
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 30),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
@@ -339,8 +375,9 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
       textAlign: TextAlign.center,
       text: TextSpan(
         style: const TextStyle(
-          fontSize: 90,
+          fontSize: 66,
           fontWeight: FontWeight.bold,
+          height: 1.25,
         ),
         children: spans,
       ),
@@ -514,13 +551,37 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
                   ),
                 ),
                 Text(
-                  'Best: $_bestStreak',
+                  'Best Streak: $_bestStreak',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.black54,
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF8F1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBCE8D1)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.emoji_events_rounded, color: Color(0xFF2F9E6E), size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Best Score: ${(_bestScorePercent ?? 0).toStringAsFixed(0)}%',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF2F9E6E),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             Container(
