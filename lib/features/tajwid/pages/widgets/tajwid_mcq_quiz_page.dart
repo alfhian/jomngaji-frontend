@@ -69,8 +69,19 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
     try {
       final payload = await TajwidQuizService.fetchQuestions(widget.quizCode);
       if (!mounted) return;
+      final randomized = payload.questions.map((q) {
+        final options = [...q.options]..shuffle();
+        return TajwidQuizQuestion(
+          id: q.id,
+          questionText: q.questionText,
+          options: options,
+          correctAnswer: q.correctAnswer,
+        );
+      }).toList()
+        ..shuffle();
+
       setState(() {
-        _questions = payload.questions;
+        _questions = randomized;
       });
     } catch (e) {
       if (!mounted) return;
@@ -85,7 +96,8 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
 
     final q = _questions[_index];
     final hasCorrect = q.correctAnswer.isNotEmpty;
-    final isCorrect = hasCorrect && option == q.correctAnswer;
+    final isCorrect = hasCorrect &&
+        _normalizeAnswer(option) == _normalizeAnswer(q.correctAnswer);
 
     setState(() {
       _locked = true;
@@ -275,14 +287,7 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
                     ),
                   ],
                 ),
-                child: Text(
-                  q.questionText,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 34,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: _buildHighlightedArabicText(q.questionText),
               ),
               const SizedBox(height: 16),
               ...q.options.map((o) => _buildOptionTile(q, o)),
@@ -298,6 +303,52 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
           ),
         ),
       ],
+    );
+  }
+
+  String _normalizeAnswer(String value) {
+    return value.trim().toLowerCase();
+  }
+
+  Set<String> _highlightCharsForCode(String code) {
+    switch (code) {
+      case 'nun_tanwin':
+        return {'ن', 'ً', 'ٍ', 'ٌ'};
+      case 'mim_mati':
+        return {'م', 'ْ'};
+      case 'mad':
+        return {'ا', 'و', 'ي'};
+      case 'qalqalah':
+        return {'ق', 'ط', 'ب', 'ج', 'د'};
+      case 'ghunnah':
+        return {'ن', 'م'};
+      default:
+        return {};
+    }
+  }
+
+  Widget _buildHighlightedArabicText(String text) {
+    final highlights = _highlightCharsForCode(widget.quizCode);
+    final spans = text.split('').map((ch) {
+      final highlighted = highlights.contains(ch);
+      return TextSpan(
+        text: ch,
+        style: TextStyle(
+          color: highlighted ? const Color(0xFF2FB576) : Colors.black87,
+          fontWeight: highlighted ? FontWeight.w800 : FontWeight.w700,
+        ),
+      );
+    }).toList();
+
+    return RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        style: GoogleFonts.poppins(
+          fontSize: 34,
+          fontWeight: FontWeight.w700,
+        ),
+        children: spans,
+      ),
     );
   }
 
@@ -318,7 +369,8 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
 
   Widget _buildOptionTile(TajwidQuizQuestion q, String option) {
     final hasCorrect = q.correctAnswer.isNotEmpty;
-    final isCorrect = hasCorrect && option == q.correctAnswer;
+    final isCorrect = hasCorrect &&
+        _normalizeAnswer(option) == _normalizeAnswer(q.correctAnswer);
     final isSelected = _selected == option;
 
     Color bg = const Color(0xFFE8FFF0);
