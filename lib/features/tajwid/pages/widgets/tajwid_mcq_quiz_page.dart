@@ -39,6 +39,7 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
   int _bestStreak = 0;
 
   String? _selectedOption;
+  bool? _selectedWasCorrect;
   bool _lockedAnswer = false;
 
   final List<Map<String, dynamic>> _answers = [];
@@ -150,6 +151,7 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
     setState(() {
       _lockedAnswer = true;
       _selectedOption = answer;
+      _selectedWasCorrect = benar;
 
       if (benar) {
         _correctCount++;
@@ -201,6 +203,7 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
       _questionIndex++;
       _lockedAnswer = false;
       _selectedOption = null;
+      _selectedWasCorrect = null;
     });
   }
 
@@ -348,6 +351,7 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
     final current = _sessionQuestions[_questionIndex];
     final isCorrect = _isCorrect(current, label);
     final isSelected = _selectedOption == label;
+    final selectedCorrect = _selectedWasCorrect == true;
 
     Color bg = const Color(0xFFE8FFF0);
     Color border = const Color(0xFF50D1A0);
@@ -355,7 +359,12 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
     IconData? icon;
 
     if (_lockedAnswer) {
-      if (isCorrect) {
+      if (isSelected && selectedCorrect) {
+        bg = const Color(0xFFD9F8E5);
+        border = const Color(0xFF1E915B);
+        text = const Color(0xFF1E915B);
+        icon = Icons.check_circle_rounded;
+      } else if (isCorrect) {
         bg = const Color(0xFFD9F8E5);
         border = const Color(0xFF1E915B);
         text = const Color(0xFF1E915B);
@@ -372,10 +381,15 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
       }
     }
 
+    final Animation<double> optionAnimation =
+        (isSelected && _lockedAnswer)
+            ? (selectedCorrect ? correctAnim : wrongAnim)
+            : kAlwaysDismissedAnimation;
+
     return ScaleTransition(
       scale: Tween(begin: 1.0, end: 1.08).animate(
         CurvedAnimation(
-          parent: isSelected && _lockedAnswer && isCorrect ? correctAnim : wrongAnim,
+          parent: optionAnimation,
           curve: Curves.easeOutBack,
         ),
       ),
