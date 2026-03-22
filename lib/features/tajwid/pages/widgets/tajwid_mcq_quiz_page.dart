@@ -268,6 +268,10 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
     final score = total == 0 ? fallbackScore : (correct / total) * 100;
     final passed = score >= _passScore;
     final xpGain = correct * 5;
+    final scoreInt = score.round();
+    final scoreColor = passed ? const Color(0xFF42C88A) : Colors.redAccent;
+    final label = passed ? 'Lolos' : 'Perlu Latihan';
+    final emoji = passed ? '🎉' : '⚠️';
 
     _bestScorePercent = max(_bestScorePercent ?? 0, score);
 
@@ -275,7 +279,7 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
       insetPadding: const EdgeInsets.symmetric(horizontal: 30),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(26),
@@ -284,17 +288,54 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              passed ? 'MasyaAllah, Lolos!' : 'Semangat, Coba Lagi!',
+              '$emoji  $label',
               style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: passed ? Colors.green : Colors.red,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: scoreColor,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: 126,
+              height: 126,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 108,
+                    height: 108,
+                    child: CircularProgressIndicator(
+                      value: score / 100,
+                      strokeWidth: 10,
+                      backgroundColor: Colors.grey.shade200,
+                      valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
+                    ),
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$scoreInt',
+                        style: GoogleFonts.poppins(
+                          fontSize: 34,
+                          fontWeight: FontWeight.w700,
+                          color: scoreColor,
+                        ),
+                      ),
+                      Text(
+                        'Skor',
+                        style: GoogleFonts.poppins(fontSize: 11, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             Text(
-              'Benar: $correct dari $total\nSkor: ${score.toStringAsFixed(0)}%\n+ $xpGain XP',
-              style: GoogleFonts.poppins(fontSize: 16),
+              'Benar: $correct dari $total • +$xpGain XP',
+              style: GoogleFonts.poppins(fontSize: 13, color: Colors.black87),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -304,30 +345,28 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
                   : 'Belum lolos, ayo coba lagi sampai lebih mantap.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 12,
+                fontSize: 12.5,
                 color: Colors.black54,
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 18),
             GestureDetector(
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pop(context);
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF50D1A0), Color(0xFF2FB576)],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
+                  color: scoreColor,
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Center(
                   child: Text(
-                    'Kembali',
+                    'Tutup',
                     style: GoogleFonts.poppins(
-                      fontSize: 17,
+                      fontSize: 15,
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
                     ),
