@@ -10,6 +10,7 @@ class LatihanMadRecordingPage extends StatelessWidget {
     return const TajwidRecordingPracticePage(
       title: 'Recording Mad',
       accent: Color(0xFF8B5CF6),
+      quizCode: 'mad',
       intro: 'Jaga panjang pendek bacaan sesuai jenis Mad.',
       prompts: [
         RecordingPrompt(arabicText: 'قَالَ', tip: 'Mad Thabi\'i dibaca 2 harakat.'),

@@ -10,6 +10,7 @@ class LatihanMimMatiRecordingPage extends StatelessWidget {
     return const TajwidRecordingPracticePage(
       title: 'Recording Mim Mati',
       accent: Color(0xFF3B82F6),
+      quizCode: 'mim_mati',
       intro: 'Fokus pada tiga hukum Mim Mati dan konsistensi makhraj bibir.',
       prompts: [
         RecordingPrompt(arabicText: 'نِعْمَةٌ مِنَ اللّٰهِ', tip: 'Idzhar Syafawi: mim dibaca jelas.'),

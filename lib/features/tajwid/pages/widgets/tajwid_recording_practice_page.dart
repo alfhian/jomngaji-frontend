@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/widgets/custom_gradient_appbar.dart';
+import 'tajwid_best_score_badge.dart';
 
 class RecordingPrompt {
   final String arabicText;
@@ -12,6 +13,7 @@ class RecordingPrompt {
 
 class TajwidRecordingPracticePage extends StatefulWidget {
   final String title;
+  final String quizCode;
   final Color accent;
   final String intro;
   final List<RecordingPrompt> prompts;
@@ -19,6 +21,7 @@ class TajwidRecordingPracticePage extends StatefulWidget {
   const TajwidRecordingPracticePage({
     super.key,
     required this.title,
+    required this.quizCode,
     required this.accent,
     required this.intro,
     required this.prompts,
@@ -82,12 +85,32 @@ class _TajwidRecordingPracticePageState extends State<TajwidRecordingPracticePag
           padding: const EdgeInsets.all(20),
           children: [
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: widget.accent.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(14),
+                gradient: LinearGradient(
+                  colors: [widget.accent.withOpacity(0.18), widget.accent.withOpacity(0.08)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(widget.intro, style: GoogleFonts.poppins(fontSize: 13, height: 1.45)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.intro,
+                    style: GoogleFonts.poppins(fontSize: 13, height: 1.45),
+                  ),
+                  const SizedBox(height: 10),
+                  const Divider(height: 1),
+                  const SizedBox(height: 10),
+                  TajwidBestScoreBadge(
+                    quizCode: widget.quizCode,
+                    label: 'Best Score Praktek',
+                    source: TajwidBestScoreSource.recording,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             LinearProgressIndicator(
@@ -101,16 +124,16 @@ class _TajwidRecordingPracticePageState extends State<TajwidRecordingPracticePag
             Text('Latihan ${_index + 1}/${widget.prompts.length}', style: GoogleFonts.poppins(fontSize: 12)),
             const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(22),
                 boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12)],
               ),
               child: Text(
                 prompt.arabicText,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 38, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 16),

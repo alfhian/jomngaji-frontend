@@ -41,14 +41,16 @@ class HomePage extends StatelessWidget {
               ),
               SizedBox(
                 width: double.infinity,
-                child: Image.asset(
-                  'assets/images/background-mengaji.png',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                  height: 64,
+                child: SizedBox(
+                  height: 88,
+                  child: Image.asset(
+                    'assets/images/background-mengaji.png',
+                    fit: BoxFit.contain,
+                    alignment: Alignment.bottomCenter,
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
             ],
           ),
         ),

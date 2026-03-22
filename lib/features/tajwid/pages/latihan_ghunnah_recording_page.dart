@@ -10,6 +10,7 @@ class LatihanGhunnahRecordingPage extends StatelessWidget {
     return const TajwidRecordingPracticePage(
       title: 'Recording Ghunnah',
       accent: Color(0xFFEC4899),
+      quizCode: 'ghunnah',
       intro: 'Rasakan dengung 2 harakat dan jaga kestabilan suara.',
       prompts: [
         RecordingPrompt(arabicText: 'إِنَّ اللَّهَ', tip: 'Nun tasydid: dengung jelas 2 harakat.'),

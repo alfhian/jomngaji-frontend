@@ -10,6 +10,7 @@ class LatihanNunTanwinRecordingPage extends StatelessWidget {
     return const TajwidRecordingPracticePage(
       title: 'Recording Nun Mati & Tanwin',
       accent: Color(0xFF22A06B),
+      quizCode: 'nun_tanwin',
       intro: 'Latih pelafalan Nun Mati & Tanwin dengan rekaman. Ulangi sampai bacaan makin stabil.',
       prompts: [
         RecordingPrompt(arabicText: 'مِنْ نُورٍ', tip: 'Perjelas hukum Idzhar.'),

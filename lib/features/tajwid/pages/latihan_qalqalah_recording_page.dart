@@ -10,6 +10,7 @@ class LatihanQalqalahRecordingPage extends StatelessWidget {
     return const TajwidRecordingPracticePage(
       title: 'Recording Qalqalah',
       accent: Color(0xFFF97316),
+      quizCode: 'qalqalah',
       intro: 'Latih pantulan suara huruf qalqalah dengan ketukan yang pas.',
       prompts: [
         RecordingPrompt(arabicText: 'قَدْ أَفْلَحَ', tip: 'Sughra: pantulan ringan di tengah bacaan.'),
