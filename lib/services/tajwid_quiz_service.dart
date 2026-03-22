@@ -40,7 +40,7 @@ class TajwidQuizQuestion {
     final options = parseOptions(json['options']);
 
     return TajwidQuizQuestion(
-      id: toInt(json['id']),
+      id: toInt(json['question_id'], fallback: toInt(json['id'])),
       questionText: (json['question_text'] ?? json['question'] ?? '').toString(),
       options: options,
       correctAnswer: (json['correct_answer'] ?? '').toString(),
@@ -49,11 +49,9 @@ class TajwidQuizQuestion {
 }
 
 class TajwidQuizPayload {
-  final int quizId;
   final List<TajwidQuizQuestion> questions;
 
   const TajwidQuizPayload({
-    required this.quizId,
     required this.questions,
   });
 }
@@ -69,15 +67,27 @@ class TajwidQuizService {
     }
 
     final body = jsonDecode(res.body);
-    if (body is! Map<String, dynamic>) {
-      return const TajwidQuizPayload(quizId: 0, questions: []);
+    // Backend saat ini mengembalikan List langsung:
+    // [ {question_id, question_text, options}, ... ]
+    if (body is List) {
+      final questions = body
+          .whereType<Map<String, dynamic>>()
+          .map(TajwidQuizQuestion.fromJson)
+          .where((q) => q.questionText.isNotEmpty && q.options.isNotEmpty)
+          .toList();
+
+      return TajwidQuizPayload(questions: questions);
     }
 
-    final quizId = int.tryParse('${body['quiz_id'] ?? body['id'] ?? 0}') ?? 0;
+    // Jaga kompatibilitas bila backend diubah ke bentuk map.
+    if (body is! Map<String, dynamic>) {
+      return const TajwidQuizPayload(questions: []);
+    }
+
     final rawQuestions = body['questions'];
 
     if (rawQuestions is! List) {
-      return TajwidQuizPayload(quizId: quizId, questions: const []);
+      return const TajwidQuizPayload(questions: []);
     }
 
     final questions = rawQuestions
@@ -86,7 +96,7 @@ class TajwidQuizService {
         .where((q) => q.questionText.isNotEmpty && q.options.isNotEmpty)
         .toList();
 
-    return TajwidQuizPayload(quizId: quizId, questions: questions);
+    return TajwidQuizPayload(questions: questions);
   }
 
   static Future<Map<String, dynamic>> submitQuiz({

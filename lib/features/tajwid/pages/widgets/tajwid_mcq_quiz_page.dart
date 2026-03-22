@@ -32,6 +32,8 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage> {
   int _correct = 0;
   String? _selected;
   bool _locked = false;
+  int? _serverCorrect;
+  int? _serverTotal;
 
   @override
   void initState() {
@@ -68,21 +70,23 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage> {
     setState(() {
       _locked = true;
       _selected = option;
-      if (isCorrect) _correct++;
+      if (q.correctAnswer.isNotEmpty && isCorrect) _correct++;
       _answers.add({
         'question_id': q.id,
-        'answer': option,
+        'selected_option': option,
       });
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: isCorrect ? Colors.green : Colors.red,
+        backgroundColor: q.correctAnswer.isEmpty ? Colors.blueGrey : (isCorrect ? Colors.green : Colors.red),
         duration: const Duration(milliseconds: 900),
         content: Text(
-          isCorrect
-              ? '✅ Jawaban benar! Lanjutkan!'
-              : '❌ Kurang tepat. Coba perhatikan hukum bacaan.',
+          q.correctAnswer.isEmpty
+              ? '✅ Jawaban dipilih. Lanjut ke soal berikutnya.'
+              : (isCorrect
+                  ? '✅ Jawaban benar! Lanjutkan!'
+                  : '❌ Kurang tepat. Coba perhatikan hukum bacaan.'),
         ),
       ),
     );
@@ -107,26 +111,31 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage> {
   bool _isCorrect(String selected) {
     final q = _questions[_index];
     if (q.correctAnswer.isEmpty) {
-      // Fallback jika backend belum kirim kunci jawaban.
-      return selected == q.options.first;
+      // Backend saat ini tidak kirim correct_answer pada endpoint questions.
+      // Hint benar/salah akan akurat jika field correct_answer tersedia.
+      return false;
     }
     return selected == q.correctAnswer;
   }
 
   Future<void> _submitResult() async {
     try {
-      await TajwidQuizService.submitQuiz(
+      final result = await TajwidQuizService.submitQuiz(
         quizCode: widget.quizCode,
         answers: _answers,
       );
+
+      _serverCorrect = int.tryParse('${result['correct'] ?? ''}');
+      _serverTotal = int.tryParse('${result['total'] ?? ''}');
     } catch (_) {
       // Non-blocking for UX.
     }
   }
 
   void _showResultDialog() {
-    final total = _questions.length;
-    final score = total == 0 ? 0 : ((_correct / total) * 100).round();
+    final total = _serverTotal ?? _questions.length;
+    final correct = _serverCorrect ?? _correct;
+    final score = total == 0 ? 0 : ((correct / total) * 100).round();
 
     showDialog<void>(
       context: context,
@@ -139,7 +148,7 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage> {
           style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
         content: Text(
-          'Skor kamu: $score\nBenar: $_correct / $total',
+          'Skor kamu: $score\nBenar: $correct / $total',
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(height: 1.4),
         ),
