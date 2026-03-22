@@ -22,7 +22,8 @@ class TajwidMcqQuizPage extends StatefulWidget {
   State<TajwidMcqQuizPage> createState() => _TajwidMcqQuizPageState();
 }
 
-class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage> {
+class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
+    with TickerProviderStateMixin {
   bool _loading = true;
   String? _error;
   List<TajwidQuizQuestion> _questions = [];
@@ -35,10 +36,28 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage> {
   int? _serverCorrect;
   int? _serverTotal;
 
+  late AnimationController _correctAnim;
+  late AnimationController _wrongAnim;
+
   @override
   void initState() {
     super.initState();
+    _correctAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 340),
+    );
+    _wrongAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
     _loadQuestions();
+  }
+
+  @override
+  void dispose() {
+    _correctAnim.dispose();
+    _wrongAnim.dispose();
+    super.dispose();
   }
 
   Future<void> _loadQuestions() async {
@@ -65,33 +84,54 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage> {
     if (_locked || _questions.isEmpty) return;
 
     final q = _questions[_index];
-    final isCorrect = _isCorrect(option);
+    final hasCorrect = q.correctAnswer.isNotEmpty;
+    final isCorrect = hasCorrect && option == q.correctAnswer;
 
     setState(() {
       _locked = true;
       _selected = option;
-      if (q.correctAnswer.isNotEmpty && isCorrect) _correct++;
+      if (isCorrect) _correct++;
       _answers.add({
         'question_id': q.id,
         'selected_option': option,
       });
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: q.correctAnswer.isEmpty ? Colors.blueGrey : (isCorrect ? Colors.green : Colors.red),
-        duration: const Duration(milliseconds: 900),
-        content: Text(
-          q.correctAnswer.isEmpty
-              ? '✅ Jawaban dipilih. Lanjut ke soal berikutnya.'
-              : (isCorrect
-                  ? '✅ Jawaban benar! Lanjutkan!'
-                  : '❌ Kurang tepat. Coba perhatikan hukum bacaan.'),
-        ),
-      ),
-    );
+    if (hasCorrect) {
+      if (isCorrect) {
+        _correctAnim.forward(from: 0);
+      } else {
+        _wrongAnim.forward(from: 0);
+      }
+    }
 
-    await Future.delayed(const Duration(milliseconds: 950));
+    final message = hasCorrect
+        ? (isCorrect
+            ? '✅ Benar! Lanjutkan!'
+            : '❌ Salah. Jawaban benar: ${q.correctAnswer}')
+        : '✅ Jawaban dipilih. Cek skor final setelah submit.';
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          backgroundColor: hasCorrect
+              ? (isCorrect ? const Color(0xFF2E7D32) : const Color(0xFFC62828))
+              : const Color(0xFF334155),
+          duration: const Duration(milliseconds: 900),
+          content: Text(
+            message,
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+
+    await Future.delayed(const Duration(milliseconds: 760));
 
     if (!mounted) return;
 
@@ -106,16 +146,6 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage> {
       _selected = null;
       _locked = false;
     });
-  }
-
-  bool _isCorrect(String selected) {
-    final q = _questions[_index];
-    if (q.correctAnswer.isEmpty) {
-      // Backend saat ini tidak kirim correct_answer pada endpoint questions.
-      // Hint benar/salah akan akurat jika field correct_answer tersedia.
-      return false;
-    }
-    return selected == q.correctAnswer;
   }
 
   Future<void> _submitResult() async {
@@ -140,27 +170,63 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(
-          score >= 60 ? 'MasyaAllah! 🎉' : 'Tetap Semangat 💪',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
-        ),
-        content: Text(
-          'Skor kamu: $score\nBenar: $correct / $total',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(height: 1.4),
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text('Selesai'),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 30),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 30, 20, 28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(26),
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                score >= 60 ? 'MasyaAllah, Lolos!' : 'Semangat, Coba Lagi!',
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: score >= 60 ? Colors.green : Colors.red,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Benar: $correct dari $total\nSkor: $score%',
+                style: GoogleFonts.poppins(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF50D1A0), Color(0xFF2FB576)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Selesai',
+                      style: GoogleFonts.poppins(
+                        fontSize: 17,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -169,106 +235,162 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomGradientAppBar(title: widget.title),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF7F9FF), Color(0xFFEFF7FF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-                ? Center(child: Text(_error!, textAlign: TextAlign.center))
-                : _questions.isEmpty
-                    ? const Center(child: Text('Soal belum tersedia.'))
-                    : _buildQuizBody(),
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Text(_error!, textAlign: TextAlign.center))
+              : _questions.isEmpty
+                  ? const Center(child: Text('Soal belum tersedia.'))
+                  : _buildQuizBody(),
     );
   }
 
   Widget _buildQuizBody() {
     final q = _questions[_index];
 
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    return Column(
       children: [
-        _introCard(),
-        const SizedBox(height: 14),
-        LinearProgressIndicator(
-          value: (_index + 1) / _questions.length,
-          minHeight: 8,
-          borderRadius: BorderRadius.circular(99),
-          backgroundColor: const Color(0xFFE2E8F0),
-          color: widget.accent,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Soal ${_index + 1} dari ${_questions.length}',
-          style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B)),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12)],
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(14),
+            children: [
+              _buildInfoCard(),
+              const SizedBox(height: 12),
+              LinearProgressIndicator(
+                value: (_index + 1) / _questions.length,
+                backgroundColor: Colors.grey[300],
+                color: const Color(0xFF50D1A0),
+                minHeight: 8,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  q.questionText,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 34,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...q.options.map((o) => _buildOptionTile(q, o)),
+            ],
           ),
-          child: Text(
-            q.questionText,
-            style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w700, height: 1.5),
-            textAlign: TextAlign.center,
+        ),
+        SizedBox(
+          width: double.infinity,
+          child: Image.asset(
+            'assets/images/background-mengaji.png',
+            fit: BoxFit.cover,
+            height: 96,
           ),
         ),
-        const SizedBox(height: 16),
-        ...q.options.map((o) => _optionTile(o)),
       ],
     );
   }
 
-  Widget _introCard() {
+  Widget _buildInfoCard() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: widget.accent.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFFFFF9C4),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         widget.intro,
-        style: GoogleFonts.poppins(fontSize: 13, height: 1.45),
+        style: GoogleFonts.poppins(fontSize: 12.5, height: 1.35),
+        textAlign: TextAlign.center,
       ),
     );
   }
 
-  Widget _optionTile(String option) {
-    final selected = _selected == option;
+  Widget _buildOptionTile(TajwidQuizQuestion q, String option) {
+    final hasCorrect = q.correctAnswer.isNotEmpty;
+    final isCorrect = hasCorrect && option == q.correctAnswer;
+    final isSelected = _selected == option;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: _locked ? null : () => _onOptionTap(option),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    Color bg = const Color(0xFFE8FFF0);
+    Color border = const Color(0xFF50D1A0);
+    Color text = const Color(0xFF2FB576);
+    IconData? icon;
+
+    if (_locked) {
+      if (hasCorrect) {
+        if (isCorrect) {
+          bg = const Color(0xFFD9F8E5);
+          border = const Color(0xFF1E915B);
+          text = const Color(0xFF1E915B);
+          icon = Icons.check_circle_rounded;
+        } else if (isSelected) {
+          bg = const Color(0xFFFFE2E2);
+          border = const Color(0xFFD84343);
+          text = const Color(0xFFD84343);
+          icon = Icons.cancel_rounded;
+        } else {
+          bg = Colors.white.withOpacity(0.75);
+          border = Colors.grey.shade300;
+          text = Colors.grey.shade600;
+        }
+      } else if (isSelected) {
+        bg = const Color(0xFFDBEAFE);
+        border = const Color(0xFF1D4ED8);
+        text = const Color(0xFF1D4ED8);
+        icon = Icons.check_circle_rounded;
+      }
+    }
+
+    final anim = isSelected && _locked
+        ? (isCorrect ? _correctAnim : _wrongAnim)
+        : kAlwaysDismissedAnimation;
+
+    return ScaleTransition(
+      scale: Tween(begin: 1.0, end: 1.05).animate(
+        CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+      ),
+      child: GestureDetector(
+        onTap: () => _onOptionTap(option),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
           decoration: BoxDecoration(
-            color: selected ? widget.accent.withOpacity(0.12) : Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: selected ? widget.accent : const Color(0xFFE2E8F0),
-            ),
+            color: bg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: border, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Row(
             children: [
               Expanded(
                 child: Text(
                   option,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: text,
+                  ),
                 ),
               ),
-              if (selected)
-                Icon(Icons.check_circle_rounded, color: widget.accent),
+              if (icon != null) Icon(icon, color: text),
             ],
           ),
         ),
