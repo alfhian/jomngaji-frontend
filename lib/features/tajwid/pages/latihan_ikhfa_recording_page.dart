@@ -10,6 +10,7 @@ class LatihanIkhfaRecordingPage extends StatelessWidget {
     return const TajwidRecordingPracticePage(
       title: 'Latihan Ikhfa (Recording)',
       accent: Color(0xFF0EA5E9),
+      quizCode: 'ikhfa',
       intro: 'Latihan fokus Ikhfa dengan rekaman dan evaluasi cepat.',
       prompts: [
         RecordingPrompt(arabicText: 'مِنْ رَبِّهِمْ', tip: 'Nun dibaca samar, jangan terlalu jelas.'),
