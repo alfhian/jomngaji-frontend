@@ -1,9 +1,188 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../routes/app_routes.dart';
+
+import '../../../features/iqra/widgets/animated_iqra_card.dart';
+import '../../../features/tilawah/widgets/tilawah_best_score_badge.dart';
+import '../../../routes/app_routes.dart';
+import '../../../core/widgets/custom_gradient_appbar.dart';
 
 class TahfidzMenuPage extends StatelessWidget {
   const TahfidzMenuPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const CustomGradientAppBar(title: 'Tahfidz Dasar'),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF8FBFF), Color(0xFFF1F7FF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            _heroCard(),
+            const SizedBox(height: 18),
+            _levelItem(
+              context,
+              color: const Color(0xFFEAF3FF),
+              iconColor: const Color(0xFF2563EB),
+              title: 'Tingkatan 1 — Pemula',
+              subtitle: 'Mulai hafalan surat pendek dengan pola pengulangan dasar.',
+              icon: Icons.looks_one_rounded,
+              description:
+                  'Bangun kebiasaan setoran harian dan muraja\'ah ringan untuk hafalan awal.',
+              levelTag: 'Pemula',
+              quizCode: 'tahfidz_level_1',
+              lessonId: 1,
+            ),
+            _levelItem(
+              context,
+              color: const Color(0xFFECFDF3),
+              iconColor: const Color(0xFF16A34A),
+              title: 'Tingkatan 2 — Menengah',
+              subtitle: 'Perkuat sambungan ayat dan konsistensi muraja\'ah harian.',
+              icon: Icons.looks_two_rounded,
+              description:
+                  'Latihan hafalan ayat lebih panjang dengan fokus kelancaran dan ketepatan urutan.',
+              levelTag: 'Menengah',
+              quizCode: 'tahfidz_level_2',
+              lessonId: 2,
+            ),
+            _levelItem(
+              context,
+              color: const Color(0xFFFFFBEB),
+              iconColor: const Color(0xFFF59E0B),
+              title: 'Tingkatan 3 — Mahir',
+              subtitle: 'Uji ketahanan hafalan, adab setoran, dan stabilitas bacaan.',
+              icon: Icons.looks_3_rounded,
+              description:
+                  'Simulasi setoran hafalan dengan evaluasi bacaan untuk memantapkan hafalan.',
+              levelTag: 'Mahir',
+              quizCode: 'tahfidz_level_3',
+              lessonId: 3,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _heroCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF155EEF), Color(0xFF0EA5E9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Belajar Tahfidz Bertahap',
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Pilih 3 tingkatan pembelajaran tahfidz. Setiap tingkat berisi latihan soal interaktif dan praktek setoran hafalan.',
+            style: TextStyle(color: Colors.white, fontSize: 13, height: 1.45),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _levelItem(
+    BuildContext context, {
+    required Color color,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String description,
+    required String levelTag,
+    required String quizCode,
+    required int lessonId,
+  }) {
+    return AnimatedIqraCard(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _TahfidzLevelPage(
+            title: title,
+            description: description,
+            levelTag: levelTag,
+            quizCode: quizCode,
+            lessonId: lessonId,
+          ),
+        ),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 5)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, size: 24, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: iconColor),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TahfidzLevelPage extends StatelessWidget {
+  final String title;
+  final String description;
+  final String levelTag;
+  final String quizCode;
+  final int lessonId;
+
+  const _TahfidzLevelPage({
+    required this.title,
+    required this.description,
+    required this.levelTag,
+    required this.quizCode,
+    required this.lessonId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -13,8 +192,6 @@ class TahfidzMenuPage extends StatelessWidget {
       body: ListView(
         children: [
           _heroSection(context),
-          const SizedBox(height: 20),
-          _theoryCard(),
           const SizedBox(height: 20),
           _descriptionSection(),
           const SizedBox(height: 22),
@@ -27,9 +204,6 @@ class TahfidzMenuPage extends StatelessWidget {
     );
   }
 
-  // =========================
-  // Hero section
-  // =========================
   Widget _heroSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -38,7 +212,7 @@ class TahfidzMenuPage extends StatelessWidget {
           bottomRight: Radius.circular(32),
         ),
         image: const DecorationImage(
-          image: AssetImage("assets/images/hijaiyah_banner_2.png"),
+          image: AssetImage('assets/images/hijaiyah_banner_2.png'),
           fit: BoxFit.cover,
         ),
       ),
@@ -79,20 +253,24 @@ class TahfidzMenuPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 28),
-            Text("Latihan Tahfidz",
-                style: GoogleFonts.poppins(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                )),
+            Text(
+              'Latihan Tahfidz',
+              style: GoogleFonts.poppins(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text("Tahfidz Al-Qur’an",
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 32,
-                  height: 1.25,
-                  fontWeight: FontWeight.w800,
-                )),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 28,
+                height: 1.25,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
@@ -106,11 +284,13 @@ class TahfidzMenuPage extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Text("Pemula",
-                  style: GoogleFonts.poppins(
-                    color: Colors.orange.shade700,
-                    fontWeight: FontWeight.w700,
-                  )),
+              child: Text(
+                levelTag,
+                style: GoogleFonts.poppins(
+                  color: Colors.orange.shade700,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ],
         ),
@@ -118,78 +298,6 @@ class TahfidzMenuPage extends StatelessWidget {
     );
   }
 
-  // =========================
-  // Theory Card
-  // =========================
-  Widget _theoryCard() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF9C4),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Teori Tahfidz",
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF5D4037),
-              )),
-          const SizedBox(height: 4),
-          Text(
-            "Tahfidz adalah proses menghafal Al‑Qur’an secara bertahap dan berulang. "
-            "Tujuannya menjaga kalamullah dalam hati, melatih konsistensi, dan memperkuat iman.",
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: Colors.black87,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Bullet tips (rata kiri, bukan center)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _bulletItem("Mulai dari ayat pendek."),
-              _bulletItem("Ulangi bacaan berkali‑kali."),
-              _bulletItem("Gunakan mushaf yang sama untuk konsistensi."),
-              _bulletItem("Jaga adab: berwudhu, membaca dengan tartil."),
-              _bulletItem("Muraja’ah (mengulang hafalan lama) setiap hari."),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _bulletItem(String text) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("• ", style: TextStyle(fontSize: 14)),
-        Expanded(
-          child: Text(
-            text,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: Colors.black87,
-              height: 1.3,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // =========================
-  // Description
-  // =========================
   Widget _descriptionSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -197,29 +305,30 @@ class TahfidzMenuPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Pilih latihan untuk membantu menghafal ayat Al-Qur’an.",
+            description,
             style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
           ),
           const SizedBox(height: 4),
-          Text("2 Aktivitas latihan",
-              style: GoogleFonts.poppins(fontSize: 13, color: Colors.black54)),
+          Text(
+            '2 Aktivitas latihan',
+            style: GoogleFonts.poppins(fontSize: 13, color: Colors.black54),
+          ),
         ],
       ),
     );
   }
 
-  // =========================
-  // Progress section
-  // =========================
   Widget _progressSection() {
-    double progressValue = 0.0; // TODO: bind ke progress Tahfidz
+    const double progressValue = 0.0;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Progress",
-              style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
+          Text(
+            'Progress',
+            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
@@ -231,15 +340,15 @@ class TahfidzMenuPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text("${(progressValue * 100).toInt()}% selesai",
-              style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54)),
+          Text(
+            '${(progressValue * 100).toInt()}% selesai',
+            style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+          ),
         ],
       ),
     );
   }
-  // =========================
-  // Exercise list
-  // =========================
+
   Widget _exerciseList(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -247,22 +356,48 @@ class TahfidzMenuPage extends StatelessWidget {
         children: [
           _exerciseItem(
             context,
-            title: "Latihan Soal Interaktif",
-            subtitle: "Tebak ayat berikutnya atau melengkapi potongan ayat",
+            title: 'Latihan Soal Interaktif',
+            subtitle: 'Jawab soal untuk menguatkan urutan dan adab hafalan.',
             icon: Icons.quiz_rounded,
             color: const Color(0xFFE3F2FD),
             iconColor: const Color(0xFF2196F3),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.latihanTahfidzPilihan),
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.latihanTahfidzPilihan,
+              arguments: {
+                'quiz_code': quizCode,
+                'level_tag': levelTag,
+              },
+            ),
+            scoreBadge: TilawahBestScoreBadge(
+              quizCode: quizCode,
+              lessonId: lessonId,
+              label: 'Best score soal',
+            ),
             unlocked: true,
           ),
           _exerciseItem(
             context,
-            title: "Latihan Hafalan",
-            subtitle: "Praktek menghafal dengan suara (rekaman suara)",
+            title: 'Praktek Setoran Hafalan',
+            subtitle: 'Rekam hafalanmu, putar ulang, lalu nilai pengucapan.',
             icon: Icons.mic_rounded,
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.latihanTahfidzRecording),
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.latihanTahfidzRecording,
+              arguments: {
+                'quiz_code': quizCode,
+                'level_tag': levelTag,
+                'lesson_id': lessonId,
+              },
+            ),
+            scoreBadge: TilawahBestScoreBadge(
+              quizCode: quizCode,
+              lessonId: lessonId,
+              label: 'Best score praktek',
+              source: TilawahBestScoreSource.recording,
+            ),
             unlocked: true,
           ),
         ],
@@ -270,9 +405,6 @@ class TahfidzMenuPage extends StatelessWidget {
     );
   }
 
-  // =========================
-  // Single exercise card
-  // =========================
   Widget _exerciseItem(
     BuildContext context, {
     required String title,
@@ -281,6 +413,7 @@ class TahfidzMenuPage extends StatelessWidget {
     required Color color,
     required Color iconColor,
     required VoidCallback onTap,
+    required Widget scoreBadge,
     required bool unlocked,
   }) {
     return GestureDetector(
@@ -294,9 +427,6 @@ class TahfidzMenuPage extends StatelessWidget {
           border: Border.all(
             color: unlocked ? Colors.transparent : Colors.grey.shade300,
           ),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6),
-          ],
         ),
         child: Row(
           children: [
@@ -313,11 +443,13 @@ class TahfidzMenuPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      )),
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
@@ -326,6 +458,8 @@ class TahfidzMenuPage extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  scoreBadge,
                 ],
               ),
             ),
