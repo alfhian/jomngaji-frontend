@@ -58,6 +58,7 @@ import '../features/tilawah/pages/exam_tilawah_page.dart';
 import '../features/tahfidz/pages/tahfidz_menu_page.dart';
 import '../features/tahfidz/pages/latihan_tahfidz_pilihan_page.dart';
 import '../features/tahfidz/pages/latihan_tahfidz_recording_page.dart';
+import '../features/tahfidz/pages/exam_tahfidz_page.dart';
 
 // Tadarus
 import '../features/tadarus/pages/tadarus_menu_page.dart';
@@ -128,6 +129,7 @@ class AppRoutes {
   static const tahfidzMenu = "/tahfidz-menu";
   static const latihanTahfidzPilihan = "/latihan-tahfidz-pilihan";
   static const latihanTahfidzRecording = "/latihan-tahfidz-recording";
+  static const examTahfidz = "/exam-tahfidz";
 
   // Tadarus
   static const dailyQuiz = "/daily-quiz";
@@ -203,6 +205,7 @@ class AppRoutes {
     tahfidzMenu: (_) => const TahfidzMenuPage(),
     latihanTahfidzPilihan: (_) => const LatihanTahfidzPilihanPage(),
     latihanTahfidzRecording: (_) => const LatihanTahfidzRecordingPage(),
+    examTahfidz: (_) => const ExamTahfidzPage(),
 
     // Tadarus & Quiz
     dailyQuiz: (_) => const DailyQuizPage(),
