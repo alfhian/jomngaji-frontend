@@ -92,6 +92,30 @@ class _ExamTajwidPageState extends State<ExamTajwidPage> {
       targetPronunciation: 'مِنْ رَبِّهِمْ',
       lessonId: 1,
     ),
+    _ExamQuestion.mcq(
+      prompt: 'Pilih hukum tajwid yang tepat',
+      arabic: 'أَنْبِئْهُمْ',
+      options: ['Iqlab', 'Idgham', 'Ikhfa'],
+      correct: 'Iqlab',
+    ),
+    _ExamQuestion.pronunciation(
+      prompt: 'Praktek bacaan',
+      arabic: 'وَمَنْ يَقُولُ',
+      targetPronunciation: 'وَمَنْ يَقُولُ',
+      lessonId: 1,
+    ),
+    _ExamQuestion.mcq(
+      prompt: 'Pilih hukum tajwid yang tepat',
+      arabic: 'يَدْخُلُونَ',
+      options: ['Qalqalah Sughra', 'Qalqalah Kubra', 'Ghunnah'],
+      correct: 'Qalqalah Sughra',
+    ),
+    _ExamQuestion.pronunciation(
+      prompt: 'Praktek bacaan',
+      arabic: 'إِنَّا أَعْطَيْنَاكَ',
+      targetPronunciation: 'إِنَّا أَعْطَيْنَاكَ',
+      lessonId: 5,
+    ),
   ];
 
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
@@ -373,6 +397,16 @@ class _ExamTajwidPageState extends State<ExamTajwidPage> {
     final finalScore = (totalCorrect / totalQuestions) * 100;
 
     try {
+      await _submitTajwidExam(
+        totalQuestions: totalQuestions,
+        correctAnswers: totalCorrect,
+        recordingScores: _recordingScores,
+      );
+    } catch (e) {
+      _showSnack('Gagal submit exam ke server: $e');
+    }
+
+    try {
       await ProgressService.saveExamScore(totalCorrect);
       await ProgressService.saveXP(totalCorrect * 10);
     } catch (_) {}
@@ -463,14 +497,14 @@ class _ExamTajwidPageState extends State<ExamTajwidPage> {
     );
   }
 
-  Future<void> _submitIqraExam({
+  Future<void> _submitTajwidExam({
     required int totalQuestions,
     required int correctAnswers,
     required List<double> recordingScores,
   }) async {
     final headers = await AuthService.authHeaders(extra: {'Content-Type': 'application/json'});
     final response = await http.post(
-      Uri.parse('$_baseUrl/iqra-exam/submit'),
+      Uri.parse('$_baseUrl/tajwid-exam/submit'),
       headers: headers,
       body: jsonEncode({
         'total_questions': totalQuestions,
