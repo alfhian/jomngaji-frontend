@@ -255,122 +255,11 @@ class _ExamTajwidPageState extends State<ExamTajwidPage> {
         _pronunciationDone = true;
         _feedback = 'Skor pengucapan: $score';
       });
-
-      await _showScorePopup(result);
     } catch (e) {
       _showSnack('Gagal evaluasi pengucapan: $e');
     } finally {
       if (mounted) setState(() => _isEvaluating = false);
     }
-  }
-
-  Future<void> _showScorePopup(EvaluationResult r) async {
-    final score = r.score.clamp(0, 100);
-    Color scoreColor;
-    String label;
-    String emoji;
-
-    if (score >= 90) {
-      scoreColor = const Color(0xFF42C88A);
-      label = 'MasyaAllah!';
-      emoji = '🌟';
-    } else if (score >= 75) {
-      scoreColor = const Color(0xFF5FB3F3);
-      label = 'Bagus!';
-      emoji = '👍';
-    } else if (score >= 50) {
-      scoreColor = Colors.orange;
-      label = 'Cukup Baik';
-      emoji = '🙂';
-    } else {
-      scoreColor = Colors.redAccent;
-      label = 'Perlu Latihan';
-      emoji = '⚠️';
-    }
-
-    await showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'score',
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 280),
-      pageBuilder: (_, __, ___) => Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.85,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: const [BoxShadow(blurRadius: 30, color: Colors.black26)],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$emoji  $label',
-                  style: GoogleFonts.poppins(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w700,
-                    color: scoreColor,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: 124,
-                  height: 124,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        value: score / 100,
-                        strokeWidth: 11,
-                        backgroundColor: Colors.grey.shade200,
-                        valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
-                      ),
-                      Text(
-                        '$score',
-                        style: GoogleFonts.poppins(
-                          fontSize: 34,
-                          fontWeight: FontWeight.bold,
-                          color: scoreColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  r.feedback,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(fontSize: 13.5, height: 1.5, color: Colors.black87),
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: scoreColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: Text('Tutup', style: GoogleFonts.poppins(color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      transitionBuilder: (_, anim, __, child) {
-        return Transform.scale(
-          scale: Curves.easeOutBack.transform(anim.value),
-          child: Opacity(opacity: anim.value, child: child),
-        );
-      },
-    );
   }
 
   Future<void> _goNext() async {
@@ -435,65 +324,57 @@ class _ExamTajwidPageState extends State<ExamTajwidPage> {
                   ConfettiWidget(
                     confettiController: _resultConfetti,
                     blastDirection: -3.14 / 2,
-                    numberOfParticles: 14,
+                    numberOfParticles: 16,
                     gravity: 0.3,
                   ),
-                _resultCard(totalCorrect, totalQuestions, finalScore),
+                Dialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isGreat ? 'MasyaAllah! Nilai Bagus 🌟' : 'Tes Akhir Selesai ✅',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 22,
+                            color: isGreat ? const Color(0xFF2F9E6E) : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Pilihan ganda benar: $_mcqCorrect/5\n'
+                          'Pengucapan lolos: $_pronunciationPassed/5\n'
+                          'Final score: ${finalScore.toStringAsFixed(1)}%',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(fontSize: 14),
+                        ),
+                        const SizedBox(height: 18),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF42C88A),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Kembali'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _resultCard(int totalCorrect, int totalQuestions, double finalScore) {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.86,
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 26)],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              finalScore >= 80 ? 'MasyaAllah, Keren!' : 'Terus Latihan, Kamu Bisa!',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 21,
-                fontWeight: FontWeight.w700,
-                color: finalScore >= 80 ? const Color(0xFF42C88A) : Colors.orange,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'Skor: ${finalScore.toStringAsFixed(0)}%\nBenar: $totalCorrect dari $totalQuestions',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 15),
-            ),
-            const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF42C88A),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: Text('Kembali', style: GoogleFonts.poppins(color: Colors.white)),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -522,196 +403,199 @@ class _ExamTajwidPageState extends State<ExamTajwidPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  Widget _mcqOption(String opt) {
-    final selected = _selectedOption == opt;
-    final correct = opt == _q.correct;
-
-    Color bg = Colors.white;
-    if (_answerLocked && correct) bg = const Color(0xFFD9F8E5);
-    if (_answerLocked && selected && !correct) bg = const Color(0xFFFFE2E2);
-
-    return GestureDetector(
-      onTap: () => _answerMcq(opt),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFD1D5DB)),
-        ),
-        child: Center(
-          child: Text(
-            opt,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final progress = (_currentIndex + 1) / _questions.length;
 
     return Scaffold(
       appBar: const CustomGradientAppBar(title: 'Tes Akhir Tajwid'),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF7F9FF), Color(0xFFEFF7FF)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/ujian-mengaji.png',
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withOpacity(0.88),
+                    Colors.white.withOpacity(0.82),
+                    Colors.white.withOpacity(0.72),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
             child: Column(
               children: [
-                LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(99),
-                  color: const Color(0xFF42C88A),
-                  backgroundColor: const Color(0xFFE5E7EB),
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    '${_currentIndex + 1}/${_questions.length}',
-                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 8,
+                        borderRadius: BorderRadius.circular(16),
+                        color: const Color(0xFF42C88A),
+                        backgroundColor: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Soal ${_currentIndex + 1}/${_questions.length} • ${_q.type == _ExamType.mcq ? 'Pilihan Ganda' : 'Pengucapan'}',
+                        style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Colors.white.withOpacity(0.92),
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12)],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     children: [
                       Text(
                         _q.prompt,
-                        style: GoogleFonts.poppins(fontSize: 13, color: Colors.black54),
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       Text(
                         _q.arabic,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 44, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 42,
+                          color: Color(0xFF42C88A),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 14),
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 220),
+                  opacity: _feedback.isEmpty ? 0 : 1,
+                  child: Text(
+                    _feedback,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      color: _feedback.contains('✅') ? Colors.green : Colors.red,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Expanded(
                   child: _q.type == _ExamType.mcq ? _buildMcqBody() : _buildPronBody(),
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildMcqBody() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Pilih jawaban paling tepat:',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 10),
-        ..._q.options.map(_mcqOption),
-        if (_feedback.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(_feedback, style: GoogleFonts.poppins(fontSize: 12.5)),
+    return ListView.separated(
+      itemCount: _q.options.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, i) {
+        final opt = _q.options[i];
+        final selected = _selectedOption == opt;
+
+        return GestureDetector(
+          onTap: () => _answerMcq(opt),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: selected ? const Color(0xFFE7FFF2) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected ? const Color(0xFF42C88A) : Colors.grey.shade300,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                opt,
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF2F9E6E),
+                ),
+              ),
+            ),
           ),
-      ],
+        );
+      },
     );
   }
 
   Widget _buildPronBody() {
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: _isRecording ? _stopRecording : _startRecording,
-                icon: Icon(_isRecording ? Icons.stop_rounded : Icons.mic_rounded),
-                label: Text(_isRecording ? 'Stop Rekam' : 'Mulai Rekam'),
-              ),
-            ),
-          ],
+        ElevatedButton.icon(
+          onPressed: _isRecording ? _stopRecording : _startRecording,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _isRecording ? Colors.red : const Color(0xFF42C88A),
+            foregroundColor: Colors.white,
+          ),
+          icon: Icon(_isRecording ? Icons.stop : Icons.mic),
+          label: Text(_isRecording ? 'Stop Rekam' : 'Mulai Rekam'),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: _isPlaying ? null : _playRecorded,
-                icon: Icon(_isPlaying ? Icons.graphic_eq_rounded : Icons.play_arrow_rounded),
-                label: Text(_isPlaying ? 'Memutar...' : 'Putar Rekaman'),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('Putar'),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
+            const SizedBox(width: 10),
             Expanded(
-              child: FilledButton.icon(
+              child: ElevatedButton.icon(
                 onPressed: _isEvaluating ? null : _evaluatePronunciation,
-                icon: _isEvaluating
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.auto_awesome_rounded),
-                style: FilledButton.styleFrom(backgroundColor: const Color(0xFF42C88A)),
-                label: Text(_isEvaluating ? 'Menilai...' : 'Nilai Pengucapan'),
+                icon: const Icon(Icons.auto_awesome),
+                label: Text(_isEvaluating ? 'Menilai...' : 'Nilai'),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        if (_feedback.isNotEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Text(_feedback, style: GoogleFonts.poppins(fontSize: 12.5)),
-          ),
-        const Spacer(),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
             onPressed: _pronunciationDone ? _goNext : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF111827),
+              backgroundColor: const Color(0xFF2F9E6E),
               foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey.shade300,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text(
-              _currentIndex == _questions.length - 1 ? 'Selesaikan Tes' : 'Lanjut Soal',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
+            child: const Text('Lanjut'),
           ),
         ),
       ],
