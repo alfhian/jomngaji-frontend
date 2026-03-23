@@ -24,7 +24,7 @@ class _LatihanTahfidzRecordingPageState extends State<LatihanTahfidzRecordingPag
     setState(() {
       if (_isRecording) {
         _isRecording = false;
-        _hasAudio = true; // dummy selesai rekaman
+        _hasAudio = true; // selesai rekaman
       } else {
         _isRecording = true;
         _hasAudio = false;

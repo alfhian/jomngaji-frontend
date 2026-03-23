@@ -258,7 +258,7 @@ class TahfidzMenuPage extends StatelessWidget {
           _exerciseItem(
             context,
             title: "Latihan Hafalan",
-            subtitle: "Praktek menghafal dengan suara (dummy recording)",
+            subtitle: "Praktek menghafal dengan suara (rekaman suara)",
             icon: Icons.mic_rounded,
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),

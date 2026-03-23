@@ -361,7 +361,14 @@ class _TilawahLevelPage extends StatelessWidget {
             icon: Icons.quiz_rounded,
             color: const Color(0xFFE3F2FD),
             iconColor: const Color(0xFF2196F3),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.latihanTilawahPilihan),
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.latihanTilawahPilihan,
+              arguments: {
+                'quiz_code': quizCode,
+                'level_tag': levelTag,
+              },
+            ),
             scoreBadge: TilawahBestScoreBadge(
               quizCode: quizCode,
               lessonId: lessonId,
@@ -372,7 +379,7 @@ class _TilawahLevelPage extends StatelessWidget {
           _exerciseItem(
             context,
             title: "Praktek Bacaan Tilawah",
-            subtitle: "Simulasi membaca dengan suara (dummy recording)",
+            subtitle: "Simulasi membaca dengan rekaman suara",
             icon: Icons.mic_rounded,
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),

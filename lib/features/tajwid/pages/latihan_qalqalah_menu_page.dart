@@ -209,7 +209,7 @@ class LatihanQalqalahMenuPage extends StatelessWidget {
           _exerciseItem(
             context,
             title: "Praktek Bacaan Tajwid",
-            subtitle: "Simulasi membaca dengan suara (dummy recording)",
+            subtitle: "Simulasi membaca dengan suara (rekaman suara)",
             icon: Icons.mic_rounded,
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
