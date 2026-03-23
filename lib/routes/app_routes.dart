@@ -52,6 +52,7 @@ import '../features/tajwid/pages/latihan_ghunnah_recording_page.dart';
 import '../features/tilawah/pages/tilawah_menu_page.dart';
 import '../features/tilawah/pages/latihan_tilawah_pilihan_page.dart';
 import '../features/tilawah/pages/latihan_tilawah_recording_page.dart';
+import '../features/tilawah/pages/exam_tilawah_page.dart';
 
 // Tahfidz
 import '../features/tahfidz/pages/tahfidz_menu_page.dart';
@@ -121,6 +122,7 @@ class AppRoutes {
   static const tilawahMenu = "/tilawah-menu";
   static const latihanTilawahPilihan = "/latihan-tilawah-pilihan";
   static const latihanTilawahRecording = "/latihan-tilawah-recording";
+  static const examTilawah = "/exam-tilawah";
 
   // Tahfidz
   static const tahfidzMenu = "/tahfidz-menu";
@@ -195,6 +197,7 @@ class AppRoutes {
     tilawahMenu: (_) => const TilawahMenuPage(),
     latihanTilawahPilihan: (_) => const LatihanTilawahPilihanPage(),
     latihanTilawahRecording: (_) => const LatihanTilawahRecordingPage(),
+    examTilawah: (_) => const ExamTilawahPage(),
 
     // Tahfidz
     tahfidzMenu: (_) => const TahfidzMenuPage(),

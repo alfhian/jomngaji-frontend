@@ -65,6 +65,7 @@ class TilawahMenuPage extends StatelessWidget {
               quizCode: 'tilawah_level_3',
               lessonId: 3,
             ),
+            _examItem(context),
           ],
         ),
       ),
@@ -162,6 +163,53 @@ class TilawahMenuPage extends StatelessWidget {
               ),
             ),
             Icon(Icons.arrow_forward_ios_rounded, size: 16, color: iconColor),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _examItem(BuildContext context) {
+    return AnimatedIqraCard(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.examTilawah),
+      child: Container(
+        margin: const EdgeInsets.only(top: 4, bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF1F2),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 5)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE11D48).withOpacity(0.14),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.verified_rounded, size: 24, color: Color(0xFFE11D48)),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tes Akhir Tilawah',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Selesaikan ujian pilihan ganda dan pengucapan untuk menutup semua level.',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Color(0xFFE11D48)),
           ],
         ),
       ),
