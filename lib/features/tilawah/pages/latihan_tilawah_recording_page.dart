@@ -1,240 +1,101 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-class LatihanTilawahRecordingPage extends StatefulWidget {
+import 'widgets/tilawah_recording_practice_page.dart';
+
+class LatihanTilawahRecordingPage extends StatelessWidget {
   const LatihanTilawahRecordingPage({super.key});
 
-  @override
-  State<LatihanTilawahRecordingPage> createState() =>
-      _LatihanTilawahRecordingPageState();
-}
-
-class _LatihanTilawahRecordingPageState extends State<LatihanTilawahRecordingPage> {
-  bool _isRecording = false;
-  bool _hasAudio = false;
-  int ayatIndex = 0;
-
-  final List<List<TextSpan>> ayatList = [
-    [
-      const TextSpan(text: "وَرَتِّلِ"),
-      const TextSpan(
-        text: " الْقُرْآنَ تَرْتِيلًا",
-        style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-      ),
-    ],
-    [
-      const TextSpan(text: "اقْرَأْ"),
-      const TextSpan(
-        text: " بِاسْمِ رَبِّكَ",
-        style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-      ),
-    ],
-    [
-      const TextSpan(text: "يَتْلُونَهُ"),
-      const TextSpan(
-        text: " حَقَّ تِلَاوَتِهِ",
-        style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-      ),
-    ],
-  ];
-
-  void _toggleRecording() {
-    setState(() {
-      if (_isRecording) {
-        _isRecording = false;
-        _hasAudio = true; // selesai rekaman
-      } else {
-        _isRecording = true;
-      }
-    });
-  }
-
-  void _nextAyat() {
-    if (ayatIndex < ayatList.length - 1) {
-      setState(() {
-        ayatIndex++;
-        _hasAudio = false;
-      });
-    } else {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text("Latihan Selesai"),
-          content: Text(
-            "Kamu sudah mencoba semua contoh bacaan Tilawah.",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(fontSize: 14),
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF42C88A),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Tutup"),
-            )
-          ],
+  List<TilawahRecordingPrompt> _promptsForLevel(String levelTag) {
+    if (levelTag == 'Menengah') {
+      return const [
+        TilawahRecordingPrompt(
+          arabicText: 'وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا',
+          tip: 'Baca tartil dan jelas, perhatikan panjang pendek bacaan.',
         ),
-      );
+        TilawahRecordingPrompt(
+          arabicText: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
+          tip: 'Jaga waqaf di akhir ayat agar makna tetap utuh.',
+        ),
+        TilawahRecordingPrompt(
+          arabicText: 'الرَّحْمَٰنِ الرَّحِيمِ',
+          tip: 'Fokus pada kejelasan huruf dan sifat huruf.',
+        ),
+        TilawahRecordingPrompt(
+          arabicText: 'مَالِكِ يَوْمِ الدِّينِ',
+          tip: 'Perhatikan mad dan ketukan bacaan yang stabil.',
+        ),
+        TilawahRecordingPrompt(
+          arabicText: 'إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ',
+          tip: 'Jaga tempo dan pengucapan tetap konsisten sampai akhir.',
+        ),
+      ];
     }
+
+    if (levelTag == 'Mahir') {
+      return const [
+        TilawahRecordingPrompt(
+          arabicText: 'إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ',
+          tip: 'Latih kestabilan irama dan ketepatan tajwid secara bersamaan.',
+        ),
+        TilawahRecordingPrompt(
+          arabicText: 'فَصَلِّ لِرَبِّكَ وَانْحَرْ',
+          tip: 'Perhatikan makhraj huruf dan hentian bacaan yang tepat.',
+        ),
+        TilawahRecordingPrompt(
+          arabicText: 'إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ',
+          tip: 'Baca utuh dengan artikulasi jelas dan tidak tergesa-gesa.',
+        ),
+        TilawahRecordingPrompt(
+          arabicText: 'قُلْ هُوَ اللَّهُ أَحَدٌ',
+          tip: 'Pastikan qalqalah dan ghunnah dibaca proporsional.',
+        ),
+        TilawahRecordingPrompt(
+          arabicText: 'اللَّهُ الصَّمَدُ',
+          tip: 'Baca singkat namun tetap berwibawa dan tepat tajwid.',
+        ),
+      ];
+    }
+
+    return const [
+      TilawahRecordingPrompt(
+        arabicText: 'اقْرَأْ بِاسْمِ رَبِّكَ',
+        tip: 'Mulai dengan tenang dan jelas, jangan terlalu cepat.',
+      ),
+      TilawahRecordingPrompt(
+        arabicText: 'وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا',
+        tip: 'Baca perlahan (tartil) sambil memperhatikan setiap huruf.',
+      ),
+      TilawahRecordingPrompt(
+        arabicText: 'يَتْلُونَهُ حَقَّ تِلَاوَتِهِ',
+        tip: 'Perhatikan kelancaran sambung kata dan kejelasan makhraj.',
+      ),
+      TilawahRecordingPrompt(
+        arabicText: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+        tip: 'Latih bacaan basmalah dengan ritme yang stabil.',
+      ),
+      TilawahRecordingPrompt(
+        arabicText: 'اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ',
+        tip: 'Jaga panjang pendek bacaan pada kata-kata mad.',
+      ),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    final ayat = ayatList[ayatIndex];
+    final args = ModalRoute.of(context)?.settings.arguments;
+    final map = args is Map<String, dynamic> ? args : <String, dynamic>{};
 
-    return Scaffold(
-      appBar: AppBar(title: const Text("Latihan Tilawah (Recording)")),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                // Info card kuning
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF9C4),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6),
-                    ],
-                  ),
-                  child: Text(
-                    "Latihan membaca Tilawah dengan praktek suara.\n"
-                    "Tekan tombol mic untuk mulai rekam, lalu putar dan nilai bacaanmu.",
-                    style: GoogleFonts.poppins(fontSize: 13, height: 1.4),
-                  ),
-                ),
+    final levelTag = (map['level_tag'] ?? 'Pemula').toString();
+    final quizCode = (map['quiz_code'] ?? 'tilawah_level_1').toString();
+    final lessonId = int.tryParse('${map['lesson_id'] ?? 1}') ?? 1;
 
-                const SizedBox(height: 18),
-
-                // Progress
-                LinearProgressIndicator(
-                  value: (ayatIndex + 1) / ayatList.length,
-                  backgroundColor: Colors.grey[300],
-                  color: const Color(0xFF42C88A),
-                  minHeight: 8,
-                ),
-
-                const SizedBox(height: 22),
-
-                // Ayat besar dengan highlight
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFDFDFD),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6),
-                    ],
-                  ),
-                  child: Center(
-                    child: RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                        children: ayat,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 26),
-
-                // Tombol mic
-                Center(
-                  child: GestureDetector(
-                    onTap: _toggleRecording,
-                    child: Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: _isRecording ? Colors.red : const Color(0xFF42C88A),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6),
-                        ],
-                      ),
-                      child: Icon(
-                        _isRecording ? Icons.stop : Icons.mic,
-                        color: Colors.white,
-                        size: 38,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    _isRecording ? "Sedang merekam..." : "Tap untuk rekam",
-                    style: GoogleFonts.poppins(fontSize: 13),
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                // Playback + evaluasi + next (muncul setelah rekaman selesai)
-                if (_hasAudio)
-                  Column(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.play_arrow),
-                        label: const Text("Putar rekaman"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5E60CE),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.auto_awesome),
-                        label: const Text("Nilai Pengucapan"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade700,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: _nextAyat,
-                        icon: const Icon(Icons.navigate_next),
-                        label: const Text("Lanjut Ayat"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF42C88A),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-
-          // Background full width di bawah
-          SizedBox(
-            width: double.infinity,
-            child: Image.asset(
-              "assets/images/background-mengaji.png",
-              fit: BoxFit.cover,
-              height: 100,
-            ),
-          ),
-        ],
-      ),
+    return TilawahRecordingPracticePage(
+      title: 'Praktek Bacaan Tilawah',
+      quizCode: quizCode,
+      lessonId: lessonId,
+      accent: const Color(0xFF22A06B),
+      intro: 'Level $levelTag • Rekam bacaanmu, putar ulang, lalu nilai pengucapan.',
+      prompts: _promptsForLevel(levelTag),
     );
   }
 }

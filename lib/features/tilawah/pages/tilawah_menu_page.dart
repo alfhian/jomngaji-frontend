@@ -383,7 +383,15 @@ class _TilawahLevelPage extends StatelessWidget {
             icon: Icons.mic_rounded,
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.latihanTilawahRecording),
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.latihanTilawahRecording,
+              arguments: {
+                'quiz_code': quizCode,
+                'level_tag': levelTag,
+                'lesson_id': lessonId,
+              },
+            ),
             scoreBadge: TilawahBestScoreBadge(
               quizCode: quizCode,
               lessonId: lessonId,
