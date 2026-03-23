@@ -398,6 +398,23 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
   }
 
   Widget _buildArabicQuestion(String text) {
+    final isArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(text);
+    if (!isArabic) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            height: 1.45,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF2C2C2C),
+          ),
+        ),
+      );
+    }
+
     final highlights = _highlightCharsForCode(widget.quizCode);
     final spans = text.split('').map((char) {
       final highlighted = highlights.contains(char);
@@ -489,12 +506,15 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                label,
-                style: GoogleFonts.poppins(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w700,
-                  color: text,
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: text,
+                  ),
                 ),
               ),
               if (icon != null) ...[
@@ -661,7 +681,7 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
                   child: Column(
                     children: [
                       Text(
-                        'Pilih Tajwid yang tepat',
+                        'Pilih jawaban yang tepat',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
