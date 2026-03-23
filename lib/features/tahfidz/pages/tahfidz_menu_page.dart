@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 
+import '../../../features/auth/services/auth_service.dart';
 import '../../../features/iqra/widgets/animated_iqra_card.dart';
 import '../../../features/tilawah/widgets/tilawah_best_score_badge.dart';
 import '../../../routes/app_routes.dart';
@@ -232,6 +236,53 @@ class _TahfidzLevelPage extends StatelessWidget {
     required this.lessonId,
   });
 
+  double _parseProgress(dynamic raw) {
+    final value = double.tryParse('${raw ?? ''}') ?? 0;
+    if (value > 1) return (value / 100).clamp(0.0, 1.0);
+    return value.clamp(0.0, 1.0);
+  }
+
+  Future<double> _loadProgress() async {
+    try {
+      final headers = await AuthService.authHeaders();
+
+      final quizRes = await http.get(
+        Uri.parse('${AuthService.baseUrl}/quizzes/$quizCode/progress'),
+        headers: headers,
+      );
+
+      final recRes = await http.get(
+        Uri.parse('${AuthService.baseUrl}/evaluate/tahfidz/last?lesson_id=$lessonId'),
+        headers: headers,
+      );
+
+      double quizProgress = 0;
+      if (quizRes.statusCode == 200) {
+        final body = jsonDecode(quizRes.body);
+        if (body is Map<String, dynamic>) {
+          final passed = body['passed'] == true;
+          quizProgress = passed ? 1.0 : _parseProgress(body['progress']);
+        }
+      }
+
+      double recProgress = 0;
+      if (recRes.statusCode == 200) {
+        final body = jsonDecode(recRes.body);
+        if (body is Map<String, dynamic>) {
+          final score = double.tryParse(
+                '${body['score_final'] ?? body['best_score'] ?? body['score'] ?? 0}',
+              ) ??
+              0;
+          recProgress = score > 0 ? 1.0 : 0.0;
+        }
+      }
+
+      return ((quizProgress * 0.5) + (recProgress * 0.5)).clamp(0.0, 1.0);
+    } catch (_) {
+      return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -367,32 +418,37 @@ class _TahfidzLevelPage extends StatelessWidget {
   }
 
   Widget _progressSection() {
-    const double progressValue = 0.0;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Progress',
-            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progressValue,
-              backgroundColor: Colors.grey.shade300,
-              minHeight: 8,
-              color: const Color(0xFF50D1A0),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${(progressValue * 100).toInt()}% selesai',
-            style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
-          ),
-        ],
+      child: FutureBuilder<double>(
+        future: _loadProgress(),
+        builder: (_, snapshot) {
+          final progressValue = (snapshot.data ?? 0).clamp(0.0, 1.0);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Progress',
+                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: progressValue,
+                  backgroundColor: Colors.grey.shade300,
+                  minHeight: 8,
+                  color: const Color(0xFF50D1A0),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${(progressValue * 100).toInt()}% selesai',
+                style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

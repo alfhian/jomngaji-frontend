@@ -123,21 +123,8 @@ class HijaiyahService {
         ? (lessonsBody['lessons'] ?? lessonsBody['data'] ?? const [])
         : const [];
 
-    final progressRes = await http.get(
-      Uri.parse('$baseUrl/hijaiyah/global-progress'),
-      headers: headers,
-    );
-
-    double progress = 0;
-    if (progressRes.statusCode == 200) {
-      final progressBody = jsonDecode(progressRes.body);
-      if (progressBody is Map<String, dynamic>) {
-        progress = _normalizeProgress(progressBody['percentage']);
-      }
-    }
-
     if (rawLessons is! List) {
-      return HijaiyahLessonsPayload(lessons: const [], progress: progress);
+      return const HijaiyahLessonsPayload(lessons: [], progress: 0);
     }
 
     final lessons = rawLessons
@@ -145,6 +132,30 @@ class HijaiyahService {
         .map(HijaiyahLesson.fromJson)
         .toList()
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+
+    final totalLetters = lessons.fold<int>(0, (sum, lesson) => sum + lesson.totalLetters);
+    final completedLetters = lessons.fold<int>(
+      0,
+      (sum, lesson) => sum + lesson.completedLetters.clamp(0, lesson.totalLetters),
+    );
+
+    double progress = totalLetters > 0 ? completedLetters / totalLetters : 0;
+    progress = progress.clamp(0.0, 1.0);
+
+    // Fallback ke endpoint global jika lesson belum memberikan data yang cukup.
+    if (totalLetters == 0) {
+      final progressRes = await http.get(
+        Uri.parse('$baseUrl/hijaiyah/global-progress'),
+        headers: headers,
+      );
+
+      if (progressRes.statusCode == 200) {
+        final progressBody = jsonDecode(progressRes.body);
+        if (progressBody is Map<String, dynamic>) {
+          progress = _normalizeProgress(progressBody['percentage']);
+        }
+      }
+    }
 
     return HijaiyahLessonsPayload(lessons: lessons, progress: progress);
   }
