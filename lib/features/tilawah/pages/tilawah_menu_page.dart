@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/widgets/custom_gradient_appbar.dart';
 import '../../../features/iqra/widgets/animated_iqra_card.dart';
 import '../../../routes/app_routes.dart';
+import '../widgets/tilawah_best_score_badge.dart';
 
 class TilawahMenuPage extends StatelessWidget {
   const TilawahMenuPage({super.key});
@@ -33,6 +35,9 @@ class TilawahMenuPage extends StatelessWidget {
               icon: Icons.looks_one_rounded,
               description:
                   'Mulai dengan bacaan pendek, tempo pelan, dan fokus makhraj dasar.',
+              levelTag: 'Pemula',
+              quizCode: 'tilawah_level_1',
+              lessonId: 1,
             ),
             _levelItem(
               context,
@@ -43,6 +48,9 @@ class TilawahMenuPage extends StatelessWidget {
               icon: Icons.looks_two_rounded,
               description:
                   'Latihan ayat lebih panjang dengan konsistensi hukum tajwid.',
+              levelTag: 'Menengah',
+              quizCode: 'tilawah_level_2',
+              lessonId: 2,
             ),
             _levelItem(
               context,
@@ -53,6 +61,9 @@ class TilawahMenuPage extends StatelessWidget {
               icon: Icons.looks_3_rounded,
               description:
                   'Simulasi tilawah lengkap dengan evaluasi pengucapan lanjutan.',
+              levelTag: 'Mahir',
+              quizCode: 'tilawah_level_3',
+              lessonId: 3,
             ),
           ],
         ),
@@ -96,6 +107,9 @@ class TilawahMenuPage extends StatelessWidget {
     required String subtitle,
     required IconData icon,
     required String description,
+    required String levelTag,
+    required String quizCode,
+    required int lessonId,
   }) {
     return AnimatedIqraCard(
       onTap: () => Navigator.push(
@@ -104,7 +118,9 @@ class TilawahMenuPage extends StatelessWidget {
           builder: (_) => _TilawahLevelPage(
             title: title,
             description: description,
-            color: color,
+            levelTag: levelTag,
+            quizCode: quizCode,
+            lessonId: lessonId,
           ),
         ),
       ),
@@ -156,62 +172,125 @@ class TilawahMenuPage extends StatelessWidget {
 class _TilawahLevelPage extends StatelessWidget {
   final String title;
   final String description;
-  final Color color;
+  final String levelTag;
+  final String quizCode;
+  final int lessonId;
 
   const _TilawahLevelPage({
     required this.title,
     required this.description,
-    required this.color,
+    required this.levelTag,
+    required this.quizCode,
+    required this.lessonId,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomGradientAppBar(title: title),
-      body: Container(
-        decoration: const BoxDecoration(
+      extendBodyBehindAppBar: true,
+      appBar: null,
+      body: ListView(
+        children: [
+          _heroSection(context),
+          const SizedBox(height: 20),
+          _descriptionSection(),
+          const SizedBox(height: 22),
+          _progressSection(),
+          const SizedBox(height: 25),
+          _exerciseList(context),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroSection(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        image: const DecorationImage(
+          image: AssetImage("assets/images/hijaiyah_banner_2.png"),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(32),
+            bottomRight: Radius.circular(32),
+          ),
           gradient: LinearGradient(
-            colors: [Color(0xFFF8FBFF), Color(0xFFF1F7FF)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
+            colors: [
+              Colors.black.withOpacity(0.05),
+              Colors.black.withOpacity(0.40),
+            ],
           ),
         ),
-        child: ListView(
-          padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.25),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+              ),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              "Latihan Tilawah",
+              style: GoogleFonts.poppins(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 28,
+                height: 1.25,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
-                color: color,
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 6,
+                  ),
+                ],
               ),
               child: Text(
-                description,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF334155),
-                  height: 1.45,
+                levelTag,
+                style: GoogleFonts.poppins(
+                  color: Colors.orange.shade700,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
-            _activityItem(
-              context,
-              color: const Color(0xFFEAF3FF),
-              iconColor: const Color(0xFF2563EB),
-              title: 'Latihan Soal Interaktif',
-              subtitle: 'Uji pemahaman bacaan tilawah lewat soal pilihan.',
-              icon: Icons.quiz_rounded,
-              route: AppRoutes.latihanTilawahPilihan,
-            ),
-            _activityItem(
-              context,
-              color: const Color(0xFFFFF1F2),
-              iconColor: const Color(0xFFE11D48),
-              title: 'Praktek Bacaan Tilawah',
-              subtitle: 'Rekam suara untuk melatih kelancaran dan pelafalan.',
-              icon: Icons.record_voice_over_rounded,
-              route: AppRoutes.latihanTilawahRecording,
             ),
           ],
         ),
@@ -219,55 +298,164 @@ class _TilawahLevelPage extends StatelessWidget {
     );
   }
 
-  Widget _activityItem(
+  Widget _descriptionSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            description,
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "2 Aktivitas latihan",
+            style: GoogleFonts.poppins(fontSize: 13, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _progressSection() {
+    const double progressValue = 0.0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Progress",
+            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: progressValue,
+              backgroundColor: Colors.grey.shade300,
+              minHeight: 8,
+              color: const Color(0xFF50D1A0),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "${(progressValue * 100).toInt()}% selesai",
+            style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _exerciseList(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          _exerciseItem(
+            context,
+            title: "Latihan Soal Interaktif",
+            subtitle: "Jawab soal pilihan untuk mengenali pola bacaan Tilawah",
+            icon: Icons.quiz_rounded,
+            color: const Color(0xFFE3F2FD),
+            iconColor: const Color(0xFF2196F3),
+            onTap: () => Navigator.pushNamed(context, AppRoutes.latihanTilawahPilihan),
+            scoreBadge: TilawahBestScoreBadge(
+              quizCode: quizCode,
+              lessonId: lessonId,
+              label: 'Best score soal',
+            ),
+            unlocked: true,
+          ),
+          _exerciseItem(
+            context,
+            title: "Praktek Bacaan Tilawah",
+            subtitle: "Simulasi membaca dengan suara (dummy recording)",
+            icon: Icons.mic_rounded,
+            color: const Color(0xFFFFEBEE),
+            iconColor: const Color(0xFFE53935),
+            onTap: () => Navigator.pushNamed(context, AppRoutes.latihanTilawahRecording),
+            scoreBadge: TilawahBestScoreBadge(
+              quizCode: quizCode,
+              lessonId: lessonId,
+              label: 'Best score praktek',
+              source: TilawahBestScoreSource.recording,
+            ),
+            unlocked: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _exerciseItem(
     BuildContext context, {
-    required Color color,
-    required Color iconColor,
     required String title,
     required String subtitle,
     required IconData icon,
-    required String route,
+    required Color color,
+    required Color iconColor,
+    required VoidCallback onTap,
+    required Widget scoreBadge,
+    required bool unlocked,
   }) {
-    return AnimatedIqraCard(
-      onTap: () => Navigator.pushNamed(context, route),
+    return GestureDetector(
+      onTap: unlocked ? onTap : null,
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 5)),
-          ],
+          color: unlocked ? color : Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: unlocked ? Colors.transparent : Colors.grey.shade300,
+          ),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.14),
-                borderRadius: BorderRadius.circular(14),
+                color: iconColor.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 24, color: iconColor),
+              child: Icon(icon, size: 26, color: iconColor),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: Colors.black87,
+                    ),
                   ),
+                  const SizedBox(height: 8),
+                  scoreBadge,
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: iconColor),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Color(0xFF50D1A0),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+            ),
           ],
         ),
       ),
