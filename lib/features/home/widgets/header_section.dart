@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localization.dart';
+
 class HeaderSection extends StatelessWidget {
   const HeaderSection({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return SizedBox(
       width: double.infinity,
-      child: _backgroundHeader(),
+      child: _backgroundHeader(l10n),
     );
   }
 
-  Widget _backgroundHeader() {
+  Widget _backgroundHeader(AppLocalization l10n) {
     return Container(
       width: double.infinity,
       height: 270,
@@ -22,12 +26,11 @@ class HeaderSection extends StatelessWidget {
           bottomRight: Radius.circular(32),
         ),
         image: const DecorationImage(
-          image: AssetImage("assets/images/home_banner.png"),
+          image: AssetImage('assets/images/home_banner.png'),
           fit: BoxFit.cover,
         ),
       ),
       child: Container(
-        // gradient overlay biar teks tetap terbaca
         decoration: BoxDecoration(
           borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(32),
@@ -44,38 +47,38 @@ class HeaderSection extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            SizedBox(height: 8),
+          children: [
+            const SizedBox(height: 8),
             Text(
-              "Assalamu’alaikum, Dylan",
-              style: TextStyle(
+              l10n.text('home.greeting'),
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              "Semoga ngaji hari ini berkah ✨",
-              style: TextStyle(
+              l10n.text('home.subtitle'),
+              style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 12,
               ),
             ),
-            SizedBox(height: 34),
+            const SizedBox(height: 34),
             Text(
-              "Temukan kelas\nngaji favoritmu!",
-              style: TextStyle(
+              l10n.text('home.findClass'),
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 30,
                 fontWeight: FontWeight.w800,
                 height: 1.2,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
-              "Belajar Iqra, Tajwid, dan Tilawah",
-              style: TextStyle(
+              l10n.text('home.learnTopics'),
+              style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 12,
               ),

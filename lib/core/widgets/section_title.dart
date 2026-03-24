@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../localization/app_localization.dart';
+
 class SectionTitle extends StatelessWidget {
   final String title;
   final VoidCallback? onSeeAll;
@@ -29,7 +31,7 @@ class SectionTitle extends StatelessWidget {
             onPressed: onSeeAll ?? () {},
             child: Row(
               children: [
-                Text("Lihat semua", style: TextStyle(color: color)),
+                Text(context.l10n.text('home.seeAll'), style: TextStyle(color: color)),
                 const SizedBox(width: 4),
                 Icon(Icons.arrow_forward_ios_rounded, color: color, size: 12),
               ],
