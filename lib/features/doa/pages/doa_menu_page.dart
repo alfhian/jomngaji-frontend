@@ -178,13 +178,17 @@ class DoaMenuPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    doa.arab,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.amiri(
-                      fontSize: 17,
-                      color: Colors.black87,
+                  Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: Text(
+                      doa.arab,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: GoogleFonts.amiri(
+                        fontSize: 17,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
                 ],

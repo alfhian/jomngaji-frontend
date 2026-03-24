@@ -151,48 +151,26 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
     return progressValue;
   }
 
-  Future<bool> _determineCorrect(TajwidQuizQuestion question, String answer) async {
-    if (question.correctAnswer.trim().isNotEmpty) {
-      return _norm(answer) == _norm(question.correctAnswer);
-    }
-
-    // Fallback authoritative check ke backend (berbasis DB) ketika correct_answer tidak dikirim.
-    try {
-      final result = await TajwidQuizService.submitQuiz(
-        quizCode: widget.quizCode,
-        answers: [
-          {
-            'question_id': question.id,
-            'selected_option': answer,
-          }
-        ],
-      );
-
-      final correct = int.tryParse('${result['correct'] ?? 0}') ?? 0;
-      final total = int.tryParse('${result['total'] ?? 0}') ?? 0;
-      return total > 0 && correct == total;
-    } catch (_) {
-      return false;
-    }
-  }
-
   Future<void> _checkAnswer(String answer) async {
     if (_lockedAnswer) return;
 
     final current = _sessionQuestions[_questionIndex];
-    final benar = await _determineCorrect(current, answer);
+    final hasLocalCorrectAnswer = current.correctAnswer.trim().isNotEmpty;
+    final benar = hasLocalCorrectAnswer ? _isCorrect(current, answer) : false;
 
     setState(() {
       _lockedAnswer = true;
       _selectedOption = answer;
       _selectedWasCorrect = benar;
 
-      if (benar) {
-        _correctCount++;
-        _streak++;
-        _bestStreak = max(_bestStreak, _streak);
-      } else {
-        _streak = 0;
+      if (hasLocalCorrectAnswer) {
+        if (benar) {
+          _correctCount++;
+          _streak++;
+          _bestStreak = max(_bestStreak, _streak);
+        } else {
+          _streak = 0;
+        }
       }
 
       _answers.add({
@@ -201,10 +179,12 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
       });
     });
 
-    if (benar) {
-      correctAnim.forward(from: 0);
-    } else {
-      wrongAnim.forward(from: 0);
+    if (hasLocalCorrectAnswer) {
+      if (benar) {
+        correctAnim.forward(from: 0);
+      } else {
+        wrongAnim.forward(from: 0);
+      }
     }
 
     final correctText = current.correctAnswer.trim().isNotEmpty
@@ -218,9 +198,13 @@ class _TajwidMcqQuizPageState extends State<TajwidMcqQuizPage>
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           duration: const Duration(milliseconds: 850),
-          backgroundColor: benar ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
+          backgroundColor: hasLocalCorrectAnswer
+              ? (benar ? const Color(0xFF2E7D32) : const Color(0xFFC62828))
+              : const Color(0xFF1E88E5),
           content: Text(
-            benar ? '✅ Benar! Streak kamu $_streak' : '❌ Salah. Jawaban benar: $correctText',
+            hasLocalCorrectAnswer
+                ? (benar ? '✅ Benar! Streak kamu $_streak' : '❌ Salah. Jawaban benar: $correctText')
+                : '✅ Jawaban disimpan. Nilai final dihitung saat submit akhir.',
             style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
           ),
         ),

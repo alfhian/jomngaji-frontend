@@ -8,6 +8,7 @@ import '../features/auth/pages/register_page.dart';
 import '../features/home/pages/home_page.dart';
 import '../features/home/pages/profile_page.dart';
 import '../features/home/pages/daily_quiz_page.dart';
+import '../features/home/pages/reset_password_page.dart';
 
 // Iqra
 import '../features/iqra/pages/iqra_dasar_page.dart';
@@ -77,6 +78,7 @@ class AppRoutes {
   static const register = "/register";
   static const home = "/";
   static const profile = "/profile";
+  static const resetPassword = "/reset-password";
 
   // Iqra
   static const iqraDasar = '/iqra-dasar';
@@ -146,6 +148,7 @@ class AppRoutes {
     register: (_) => const RegisterPage(),
     home: (_) => const HomePage(),
     profile: (_) => const ProfilePage(),
+    resetPassword: (_) => const ResetPasswordPage(),
 
     // Iqra
     iqraDasar: (_) => const IqraDasarPage(),

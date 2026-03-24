@@ -1,15 +1,15 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:just_audio/just_audio.dart';
+
 import 'package:audio_session/audio_session.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:just_audio/just_audio.dart';
 
 import '../../../core/widgets/custom_gradient_appbar.dart';
+import '../../../models/surah.dart';
 import '../../auth/services/auth_service.dart';
 import '../data/quran_loader.dart';
-import '../../../models/surah.dart';
 import 'evaluate_page.dart';
 
 class TadarusDetailPage extends StatefulWidget {
@@ -27,11 +27,9 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
 
   int _currentAyahIndex = 0;
   int? _playingIndex;
-
-  bool _ignoreCompletion = false;
+  bool _isSwitchingTrack = false;
 
   final Map<int, GlobalKey> _ayahKeys = {};
-
   late final AudioPlayer _player;
 
   @override
@@ -39,24 +37,20 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
     super.initState();
 
     _player = AudioPlayer();
-    _player.setVolume(3.5);
-    _player.setSpeed(1.0);
+    _player.setVolume(1);
+    _player.setSpeed(1);
 
     _initAudioSession();
     _loadSurahAndProgress();
 
-    _player.processingStateStream.listen((state) async {
-      if (state != ProcessingState.completed) return;
-      if (_ignoreCompletion) {
-        _ignoreCompletion = false;
-        return;
+    _player.playerStateStream.listen((state) async {
+      if (!mounted) return;
+
+      if (state.processingState == ProcessingState.completed) {
+        await _playNextAyah(autoPlay: true);
       }
 
-      final next = _currentAyahIndex + 1;
-      if (surah != null && next < surah!.ayahs.length) {
-        _playAyahAudio(next);
-      } else {
-        await _player.stop();
+      if (!state.playing && state.processingState == ProcessingState.idle) {
         setState(() => _playingIndex = null);
       }
     });
@@ -69,36 +63,31 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
         avAudioSessionCategory: AVAudioSessionCategory.playback,
         androidAudioAttributes: AndroidAudioAttributes(
           usage: AndroidAudioUsage.media,
-          contentType: AndroidAudioContentType.music,
+          contentType: AndroidAudioContentType.speech,
         ),
       ),
     );
   }
 
-  // ===================== 🔥 BACKEND PROGRESS =====================
   Future<int> _fetchCompletedAyahCount(int surahNumber) async {
     final headers = await AuthService.authHeaders();
     final res = await http.get(
-      Uri.parse(
-        'http://10.71.164.20:4000/tadarus/progress?surah=$surahNumber',
-      ),
+      Uri.parse('http://10.71.164.20:4000/tadarus/progress?surah=$surahNumber'),
       headers: headers,
     );
 
     if (res.statusCode != 200) return 0;
 
     final json = jsonDecode(res.body);
-    return json['completed_ayah'] ?? 0; // <-- ini harus sesuai key API
+    return json['completed_ayah'] ?? 0;
   }
 
   Future<void> _loadSurahAndProgress() async {
     final s = await loadSurahDetail(widget.surah.number);
-
     final completed = await _fetchCompletedAyahCount(s.number);
+    final index = completed.clamp(0, s.ayahs.length - 1);
 
-    final index =
-        completed.clamp(0, s.ayahs.length - 1);
-
+    if (!mounted) return;
     setState(() {
       surah = s;
       progressValue = completed / s.ayahs.length;
@@ -110,16 +99,20 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
     });
   }
 
-  // ===================== AUDIO =====================
   Future<void> _playAyahAudio(int index) async {
-    if (surah == null) return;
-    if (index < 0 || index >= surah!.ayahs.length) return;
+    if (surah == null || _isSwitchingTrack) return;
+    if (index < 0 || index >= surah!.ayahs.length) {
+      _showError('Ayat di luar jangkauan.');
+      return;
+    }
 
     final s = surah!.number.toString().padLeft(3, '0');
-    final a = index.toString().padLeft(3, '0');
+    final a = (index + 1).toString().padLeft(3, '0');
     final asset = 'assets/audio/tadarus/$s$a.mp3';
 
     try {
+      _isSwitchingTrack = true;
+
       if (_playingIndex == index && _player.playing) {
         await _player.pause();
         return;
@@ -128,22 +121,59 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
       if (_playingIndex != index) {
         await _player.stop();
         await _player.setAsset(asset);
-
-        setState(() {
-          _playingIndex = index;
-          _currentAyahIndex = index;
-          progressValue = (index + 1) / surah!.ayahs.length;
-        });
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToAyah(index);
-        });
       }
 
+      if (!mounted) return;
+      setState(() {
+        _playingIndex = index;
+        _currentAyahIndex = index;
+        progressValue = (index + 1) / surah!.ayahs.length;
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToAyah(index);
+      });
+
+      _isSwitchingTrack = false;
       await _player.play();
     } catch (e) {
-      _showError("Audio gagal diputar:\n$e");
+      _showError('Audio gagal diputar:\n$e');
+    } finally {
+      _isSwitchingTrack = false;
     }
+  }
+
+  Future<void> _stopAudio() async {
+    await _player.stop();
+    if (!mounted) return;
+    setState(() => _playingIndex = null);
+  }
+
+  Future<void> _playPreviousAyah() async {
+    if (surah == null) return;
+
+    final prevIndex = _currentAyahIndex - 1;
+    if (prevIndex < 0) {
+      _showError('Ini sudah ayat pertama.');
+      return;
+    }
+
+    await _playAyahAudio(prevIndex);
+  }
+
+  Future<void> _playNextAyah({bool autoPlay = false}) async {
+    if (surah == null) return;
+
+    final nextIndex = _currentAyahIndex + 1;
+    if (nextIndex >= surah!.ayahs.length) {
+      if (!autoPlay) {
+        _showError('Ini sudah ayat terakhir.');
+      }
+      await _stopAudio();
+      return;
+    }
+
+    await _playAyahAudio(nextIndex);
   }
 
   void _scrollToAyah(int index) {
@@ -157,9 +187,6 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
     }
   }
 
-  void _playNextAyah() => _playAyahAudio(_currentAyahIndex + 1);
-  void _playPreviousAyah() => _playAyahAudio(_currentAyahIndex - 1);
-
   void _onEvaluateAyah(Ayah ayah) async {
     await Navigator.push(
       context,
@@ -171,13 +198,12 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
       ),
     );
 
-    // 🔥 refresh progress setelah evaluasi
     await _loadSurahAndProgress();
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -186,7 +212,6 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
     super.dispose();
   }
 
-  // ===================== UI =====================
   @override
   Widget build(BuildContext context) {
     if (surah == null) {
@@ -196,25 +221,27 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
     }
 
     return Scaffold(
-      appBar: const CustomGradientAppBar(title: "Tadarus AI"),
+      backgroundColor: const Color(0xFFF4F7FC),
+      appBar: const CustomGradientAppBar(title: 'Tadarus AI'),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             _headerCard(surah!),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+            _playerControls(),
+            const SizedBox(height: 14),
             Expanded(
               child: ListView.builder(
                 itemCount: surah!.ayahs.length,
                 itemBuilder: (context, index) {
                   final ayah = surah!.ayahs[index];
                   final isActive = _playingIndex == index;
-                  final key =
-                      _ayahKeys.putIfAbsent(index, () => GlobalKey());
+                  final key = _ayahKeys.putIfAbsent(index, () => GlobalKey());
 
                   return Container(
                     key: key,
-                    child: _ayahBlock(ayah, isActive),
+                    child: _ayahBlock(ayah, isActive, index),
                   );
                 },
               ),
@@ -222,116 +249,211 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
           ],
         ),
       ),
-      bottomNavigationBar: _playerControls(),
     );
   }
 
   Widget _playerControls() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+    final isPlayingCurrent = _playingIndex == _currentAyahIndex && _player.playing;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(18),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          IconButton(
-            onPressed: _playPreviousAyah,
-            icon: const Icon(Icons.skip_previous),
-            iconSize: 32,
+          _controlButton(
+            icon: Icons.skip_previous_rounded,
+            onTap: _playPreviousAyah,
           ),
-          IconButton(
-            icon: Icon(
-              _player.playing ? Icons.pause : Icons.play_arrow,
-              size: 36,
-            ),
-            onPressed: () => _playAyahAudio(_currentAyahIndex),
+          _controlButton(
+            icon: isPlayingCurrent ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            onTap: () => _playAyahAudio(_currentAyahIndex),
+            isPrimary: true,
           ),
-          IconButton(
-            onPressed: _playNextAyah,
-            icon: const Icon(Icons.skip_next),
-            iconSize: 32,
+          _controlButton(
+            icon: Icons.stop_rounded,
+            onTap: _stopAudio,
+          ),
+          _controlButton(
+            icon: Icons.skip_next_rounded,
+            onTap: _playNextAyah,
           ),
         ],
       ),
     );
   }
 
-  // ===================== WIDGETS =====================
+  Widget _controlButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    bool isPrimary = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Ink(
+        width: isPrimary ? 56 : 46,
+        height: isPrimary ? 56 : 46,
+        decoration: BoxDecoration(
+          color: isPrimary ? const Color(0xFF42C88A) : Colors.white12,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Icon(
+          icon,
+          color: Colors.white,
+          size: isPrimary ? 30 : 24,
+        ),
+      ),
+    );
+  }
+
   Widget _headerCard(Surah surah) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFE7FFF2),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE9FFF3), Color(0xFFDFF6FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFBDEFD6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(surah.name,
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(
+            surah.name,
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 6),
           Text(
-            "Surah ke-${surah.number}, ${surah.ayahs.length} ayat",
-            style: GoogleFonts.poppins(fontSize: 13),
+            'Surah ke-${surah.number}, ${surah.ayahs.length} ayat',
+            style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF334155)),
           ),
           const SizedBox(height: 10),
-          LinearProgressIndicator(
-            value: progressValue,
-            minHeight: 8,
-            backgroundColor: Colors.grey.shade300,
-            color: const Color(0xFF42C88A),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progressValue,
+              minHeight: 9,
+              backgroundColor: Colors.grey.shade300,
+              color: const Color(0xFF42C88A),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
-            "${(progressValue * 100).toStringAsFixed(0)}% selesai",
-            style: GoogleFonts.poppins(fontSize: 12),
+            '${(progressValue * 100).toStringAsFixed(0)}% selesai',
+            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
 
-  Widget _ayahBlock(Ayah ayah, bool isActive) {
+  Widget _ayahBlock(Ayah ayah, bool isActive, int index) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFE6FFF2) : Colors.white,
+        color: isActive ? const Color(0xFFE8FFF4) : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isActive ? const Color(0xFF86E0B3) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Ayat ${ayah.ayah}",
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 14),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'Ayat ${ayah.ayah}',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: () => _playAyahAudio(index),
+                icon: Icon(
+                  isActive && _player.playing ? Icons.pause_circle : Icons.play_circle,
+                  size: 30,
+                  color: const Color(0xFF2FBF84),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Directionality(
             textDirection: TextDirection.rtl,
             child: Text(
               ayah.text,
-              textAlign: TextAlign.right, // 🔥 INI KUNCINYA
+              textAlign: TextAlign.right,
               style: GoogleFonts.amiri(
-                fontSize: 28,
-                height: 2,
+                fontSize: 29,
+                height: 1.9,
+                color: const Color(0xFF0F172A),
               ),
             ),
           ),
           if (ayah.transliteration?.isNotEmpty == true) ...[
-            const SizedBox(height: 12),
-            Text(ayah.transliteration!,
-                style: GoogleFonts.notoSerif(
-                    fontStyle: FontStyle.italic)),
+            const SizedBox(height: 10),
+            Text(
+              ayah.transliteration!,
+              style: GoogleFonts.notoSerif(
+                fontStyle: FontStyle.italic,
+                color: Colors.black87,
+              ),
+            ),
           ],
           if (ayah.translation?.isNotEmpty == true) ...[
             const SizedBox(height: 8),
-            Text(ayah.translation!,
-                style: GoogleFonts.poppins())],
-          const SizedBox(height: 16),
+            Text(
+              ayah.translation!,
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF334155),
+                height: 1.5,
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton.icon(
               onPressed: () => _onEvaluateAyah(ayah),
               icon: const Icon(Icons.record_voice_over),
-              label: const Text("Rekam & Nilai Ayat Ini"),
+              label: const Text('Rekam & Nilai Ayat Ini'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2FBF84),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ),
         ],
