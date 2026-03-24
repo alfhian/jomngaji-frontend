@@ -119,4 +119,26 @@ class AuthService {
     await prefs.remove(_keyUserId);
     await prefs.remove(_keyName);
   }
+
+  static Future<void> resetPassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final headers = await authHeaders(
+      extra: {'Content-Type': 'application/x-www-form-urlencoded'},
+    );
+
+    final res = await http.post(
+      Uri.parse('$baseUrl/reset-password'),
+      headers: headers,
+      body: {
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      },
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Reset password gagal: ${res.body}');
+    }
+  }
 }

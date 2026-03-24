@@ -27,7 +27,7 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
 
   int _currentAyahIndex = 0;
   int? _playingIndex;
-  bool _isProcessingAudio = false;
+  bool _isSwitchingTrack = false;
 
   final Map<int, GlobalKey> _ayahKeys = {};
   late final AudioPlayer _player;
@@ -100,7 +100,7 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
   }
 
   Future<void> _playAyahAudio(int index) async {
-    if (surah == null || _isProcessingAudio) return;
+    if (surah == null || _isSwitchingTrack) return;
     if (index < 0 || index >= surah!.ayahs.length) {
       _showError('Ayat di luar jangkauan.');
       return;
@@ -111,7 +111,7 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
     final asset = 'assets/audio/tadarus/$s$a.mp3';
 
     try {
-      _isProcessingAudio = true;
+      _isSwitchingTrack = true;
 
       if (_playingIndex == index && _player.playing) {
         await _player.pause();
@@ -134,11 +134,12 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
         _scrollToAyah(index);
       });
 
+      _isSwitchingTrack = false;
       await _player.play();
     } catch (e) {
       _showError('Audio gagal diputar:\n$e');
     } finally {
-      _isProcessingAudio = false;
+      _isSwitchingTrack = false;
     }
   }
 

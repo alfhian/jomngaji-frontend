@@ -38,6 +38,7 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
   late final AudioPlayer _previewPlayer;
   int _previewSurahIndex = 0;
   int? _playingPreviewIndex;
+  bool _isSwitchingPreview = false;
 
   @override
   void initState() {
@@ -46,11 +47,12 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
     _previewPlayer.setVolume(1);
     _previewPlayer.setSpeed(1);
 
-    _previewPlayer.playerStateStream.listen((state) {
+    _previewPlayer.playerStateStream.listen((state) async {
       if (!mounted) return;
 
-      if (state.processingState == ProcessingState.completed) {
-        _playNextPreview();
+      if (state.processingState == ProcessingState.completed &&
+          !_isSwitchingPreview) {
+        await _playNextPreview(autoPlay: true);
       }
 
       if (!state.playing && state.processingState == ProcessingState.idle) {
@@ -224,12 +226,14 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
 
   Future<void> _playPreview({bool fromStart = false}) async {
     final surah = _currentPreviewSurah;
-    if (surah == null) return;
+    if (surah == null || _isSwitchingPreview) return;
 
     final index = _previewSurahIndex;
     final code = surah.number.toString().padLeft(3, '0');
 
     try {
+      _isSwitchingPreview = true;
+
       if (_playingPreviewIndex == index && _previewPlayer.playing && !fromStart) {
         await _previewPlayer.pause();
         return;
@@ -253,9 +257,12 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
         });
       }
 
+      _isSwitchingPreview = false;
       await _previewPlayer.play();
     } catch (e) {
       _showError('Audio preview gagal diputar:\n$e');
+    } finally {
+      _isSwitchingPreview = false;
     }
   }
 
@@ -265,14 +272,16 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
     setState(() => _playingPreviewIndex = null);
   }
 
-  Future<void> _playNextPreview() async {
+  Future<void> _playNextPreview({bool autoPlay = false}) async {
     if (_filteredSurahs.isEmpty) return;
 
     setState(() {
       _previewSurahIndex = (_previewSurahIndex + 1) % _filteredSurahs.length;
     });
 
-    await _playPreview(fromStart: true);
+    if (autoPlay) {
+      await _playPreview(fromStart: true);
+    }
   }
 
   Future<void> _playPreviousPreview() async {
@@ -497,7 +506,7 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
               ),
               _controlButton(
                 icon: Icons.skip_next_rounded,
-                onTap: surah == null ? null : _playNextPreview,
+                onTap: surah == null ? null : () => _playNextPreview(autoPlay: true),
               ),
             ],
           ),
