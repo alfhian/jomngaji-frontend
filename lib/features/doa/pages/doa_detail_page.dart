@@ -144,13 +144,16 @@ class DoaDetailPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Text(
-            doa.arab,
-            textAlign: TextAlign.right,
-            style: GoogleFonts.amiri(
-              fontSize: 34,
-              height: 1.8,
-              color: Colors.black87,
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: Text(
+              doa.arab,
+              textAlign: TextAlign.right,
+              style: GoogleFonts.amiri(
+                fontSize: 34,
+                height: 1.8,
+                color: Colors.black87,
+              ),
             ),
           ),
         ],

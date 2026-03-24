@@ -4,9 +4,11 @@ final List<Doa> doaList = [
   Doa(
     id: "doa_sebelum_makan",
     title: "Doa Sebelum Makan",
-    arab: "بِسْمِ اللَّهِ",
-    latin: "Bismillah",
-    arti: "Dengan nama Allah.",
+    arab: "اللَّهُمَّ بَارِكْ لَنَا فِيمَا رَزَقْتَنَا وَقِنَا عَذَابَ النَّارِ",
+    latin:
+        "Allaahumma baarik lanaa fiimaa razaqtanaa wa qinaa 'adzaaban naar",
+    arti:
+        "Ya Allah, berkahilah kami pada rezeki yang telah Engkau berikan dan lindungilah kami dari siksa neraka.",
     audioUrl: null,
   ),
   Doa(
@@ -65,11 +67,11 @@ final List<Doa> doaList = [
     id: "doa_sesudah_wudhu",
     title: "Doa Sesudah Wudhu",
     arab:
-        "أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ، اللَّهُمَّ اجْعَلْنِي مِنَ التَّوَّابِينَ وَاجْعَلْنِي مِنَ الْمُتَطَهِّرِينَ",
+        "أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ، اللَّهُمَّ اجْعَلْنِي مِنَ التَّوَّابِينَ وَاجْعَلْنِي مِنَ الْمُتَطَهِّرِينَ وَاجْعَلْنِي مِنْ عِبَادِكَ الصَّالِحِينَ",
     latin:
-        "Asyhadu an laa ilaaha illallaahu wahdahu laa syariika lah, wa asyhadu anna Muhammadan 'abduhu wa rasuuluh. Allaahummaj'alnii minat tawwaabiina waj'alnii minal mutathahhiriin",
+        "Asyhadu an laa ilaaha illallaahu wahdahu laa syariika lah, wa asyhadu anna Muhammadan 'abduhu wa rasuuluh. Allaahummaj'alnii minat tawwaabiina waj'alnii minal mutathahhiriin waj'alnii min 'ibaadikas shaalihiin",
     arti:
-        "Aku bersaksi tiada Tuhan selain Allah semata, tiada sekutu bagi-Nya. Aku bersaksi bahwa Muhammad adalah hamba dan utusan-Nya. Ya Allah, jadikan aku termasuk orang-orang yang bertaubat dan orang-orang yang bersuci.",
+        "Aku bersaksi tiada Tuhan selain Allah semata, tiada sekutu bagi-Nya. Aku bersaksi bahwa Muhammad adalah hamba dan utusan-Nya. Ya Allah, jadikan aku termasuk orang-orang yang bertaubat, orang-orang yang bersuci, dan hamba-hamba-Mu yang saleh.",
     audioUrl: null,
   ),
   Doa(

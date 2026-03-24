@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/widgets/custom_gradient_appbar.dart';
+import '../../../routes/app_routes.dart';
 import '../../auth/services/auth_service.dart';
 import '../widgets/app_bottom_nav.dart';
 
@@ -19,7 +20,6 @@ class _ProfilePageState extends State<ProfilePage> {
   static const _baseUrl = 'http://10.71.164.20:4000';
 
   bool _loading = true;
-  bool _resetLoading = false;
   String _name = 'Pengguna';
 
   double _iqra = 0;
@@ -33,24 +33,12 @@ class _ProfilePageState extends State<ProfilePage> {
   int _tilawahScore = 0;
   int _tahfidzScore = 0;
 
-  final _oldPasswordCtrl = TextEditingController();
-  final _newPasswordCtrl = TextEditingController();
-  final _confirmPasswordCtrl = TextEditingController();
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProfileProgress();
     });
-  }
-
-  @override
-  void dispose() {
-    _oldPasswordCtrl.dispose();
-    _newPasswordCtrl.dispose();
-    _confirmPasswordCtrl.dispose();
-    super.dispose();
   }
 
   double _normalizeProgress(dynamic value) {
@@ -66,6 +54,26 @@ class _ProfilePageState extends State<ProfilePage> {
     return raw.round();
   }
 
+  double _extractProgress(Map<String, dynamic> json) {
+    for (final key in const [
+      'progress',
+      'percentage',
+      'completion',
+      'completion_rate',
+      'overall_progress',
+    ]) {
+      if (json.containsKey(key)) {
+        return _normalizeProgress(json[key]);
+      }
+    }
+
+    final completed = double.tryParse('${json['completed'] ?? json['completed_questions'] ?? json['completed_ayah'] ?? 0}') ?? 0;
+    final total = double.tryParse('${json['total'] ?? json['total_questions'] ?? json['total_ayah'] ?? 0}') ?? 0;
+    if (total > 0) return (completed / total).clamp(0, 1);
+
+    return 0;
+  }
+
   Future<void> _loadProfileProgress() async {
     setState(() => _loading = true);
     try {
@@ -78,43 +86,35 @@ class _ProfilePageState extends State<ProfilePage> {
       final userName = (await AuthService.getUserName()) ?? 'Pengguna';
 
       final responses = await Future.wait([
-        http.get(Uri.parse('$_baseUrl/progress/average'), headers: headers),
+        http.get(Uri.parse('$_baseUrl/hijaiyah/global-progress'), headers: headers),
+        http.get(Uri.parse('$_baseUrl/tajwid-exam/progress'), headers: headers),
+        http.get(Uri.parse('$_baseUrl/tilawah-exam/progress'), headers: headers),
+        http.get(Uri.parse('$_baseUrl/tahfidz-exam/progress'), headers: headers),
         http.get(Uri.parse('$_baseUrl/tadarus/global-progress'), headers: headers),
         http.get(Uri.parse('$_baseUrl/progress/summary'), headers: headers),
       ]);
 
-      final avgRes = responses[0];
-      final tadarusRes = responses[1];
-      final summaryRes = responses[2];
-
-      if (avgRes.statusCode != 200) {
-        throw Exception('Gagal mengambil progress average: ${avgRes.body}');
-      }
-      if (tadarusRes.statusCode != 200) {
-        throw Exception('Gagal mengambil progress tadarus: ${tadarusRes.body}');
-      }
-      if (summaryRes.statusCode != 200) {
-        throw Exception('Gagal mengambil ringkasan skor ujian: ${summaryRes.body}');
+      for (final res in responses) {
+        if (res.statusCode != 200) {
+          throw Exception('Gagal mengambil data profile: ${res.body}');
+        }
       }
 
-      final avgJson = jsonDecode(avgRes.body) as Map<String, dynamic>;
-      final tadarusJson = jsonDecode(tadarusRes.body) as Map<String, dynamic>;
-      final summaryJson = jsonDecode(summaryRes.body) as Map<String, dynamic>;
-
-      final tadarusProgress = tadarusJson['percentage'] ??
-          ((tadarusJson['total_ayah'] ?? 0) == 0
-              ? 0
-              : ((tadarusJson['completed_ayah'] ?? 0) /
-                  (tadarusJson['total_ayah'] ?? 1)));
+      final iqraJson = jsonDecode(responses[0].body) as Map<String, dynamic>;
+      final tajwidExamJson = jsonDecode(responses[1].body) as Map<String, dynamic>;
+      final tilawahExamJson = jsonDecode(responses[2].body) as Map<String, dynamic>;
+      final tahfidzExamJson = jsonDecode(responses[3].body) as Map<String, dynamic>;
+      final tadarusJson = jsonDecode(responses[4].body) as Map<String, dynamic>;
+      final summaryJson = jsonDecode(responses[5].body) as Map<String, dynamic>;
 
       if (!mounted) return;
       setState(() {
         _name = userName;
-        _iqra = _normalizeProgress(avgJson['iqra_avg']);
-        _tajwid = _normalizeProgress(avgJson['tajwid_avg']);
-        _tilawah = _normalizeProgress(avgJson['tilawah_avg']);
-        _tahfidz = _normalizeProgress(avgJson['tahfidz_avg']);
-        _tadarus = _normalizeProgress(tadarusProgress);
+        _iqra = _extractProgress(iqraJson);
+        _tajwid = _extractProgress(tajwidExamJson);
+        _tilawah = _extractProgress(tilawahExamJson);
+        _tahfidz = _extractProgress(tahfidzExamJson);
+        _tadarus = _extractProgress(tadarusJson);
 
         _iqraScore = _normalizeScore(summaryJson['iqra_score']);
         _tajwidScore = _normalizeScore(summaryJson['tajwid_score']);
@@ -129,56 +129,6 @@ class _ProfilePageState extends State<ProfilePage> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  Future<void> _handleResetPassword() async {
-    final oldPass = _oldPasswordCtrl.text.trim();
-    final newPass = _newPasswordCtrl.text.trim();
-    final confirmPass = _confirmPasswordCtrl.text.trim();
-
-    if (oldPass.isEmpty || newPass.isEmpty || confirmPass.isEmpty) {
-      _showMessage('Semua field reset password wajib diisi.');
-      return;
-    }
-
-    if (newPass.length < 6) {
-      _showMessage('Password baru minimal 6 karakter.');
-      return;
-    }
-
-    if (newPass != confirmPass) {
-      _showMessage('Konfirmasi password tidak sama.');
-      return;
-    }
-
-    setState(() => _resetLoading = true);
-
-    try {
-      await AuthService.resetPassword(
-        oldPassword: oldPass,
-        newPassword: newPass,
-      );
-
-      _oldPasswordCtrl.clear();
-      _newPasswordCtrl.clear();
-      _confirmPasswordCtrl.clear();
-
-      _showMessage('Password berhasil direset.', success: true);
-    } catch (e) {
-      _showMessage('Reset password gagal: $e');
-    } finally {
-      if (mounted) setState(() => _resetLoading = false);
-    }
-  }
-
-  void _showMessage(String message, {bool success = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: success ? const Color(0xFF16A34A) : null,
-      ),
-    );
   }
 
   Widget _progressTile({
@@ -323,82 +273,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _resetPasswordCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Reset Password',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _oldPasswordCtrl,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'Password Lama',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _newPasswordCtrl,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'Password Baru',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _confirmPasswordCtrl,
-            obscureText: true,
-            decoration: const InputDecoration(
-              labelText: 'Konfirmasi Password Baru',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _resetLoading ? null : _handleResetPassword,
-              icon: _resetLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.lock_reset_rounded),
-              label: Text(_resetLoading ? 'Menyimpan...' : 'Simpan Password Baru'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF42C88A),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -479,7 +353,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: Colors.teal,
                   ),
                   const SizedBox(height: 8),
-                  _resetPasswordCard(),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, AppRoutes.resetPassword),
+                      icon: const Icon(Icons.lock_reset_rounded),
+                      label: const Text('Reset Password'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0F172A),
+                        side: const BorderSide(color: Color(0xFFB8C4D8)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 80),
                 ],
               ),
