@@ -86,11 +86,12 @@ class _ProfilePageState extends State<ProfilePage> {
       final userName = (await AuthService.getUserName()) ?? 'Pengguna';
 
       final responses = await Future.wait([
-        http.get(Uri.parse('$_baseUrl/hijaiyah/global-progress'), headers: headers),
-        http.get(Uri.parse('$_baseUrl/tajwid-exam/progress'), headers: headers),
-        http.get(Uri.parse('$_baseUrl/tilawah-exam/progress'), headers: headers),
-        http.get(Uri.parse('$_baseUrl/tahfidz-exam/progress'), headers: headers),
-        http.get(Uri.parse('$_baseUrl/tadarus/global-progress'), headers: headers),
+        http.get(
+          Uri.parse(
+            '$_baseUrl/progress/all?tajwid_quiz_code=tajwid_level_1&tilawah_quiz_code=tilawah_level_1&tahfidz_quiz_code=tahfidz_level_1',
+          ),
+          headers: headers,
+        ),
         http.get(Uri.parse('$_baseUrl/progress/summary'), headers: headers),
       ]);
 
@@ -100,21 +101,25 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       }
 
-      final iqraJson = jsonDecode(responses[0].body) as Map<String, dynamic>;
-      final tajwidExamJson = jsonDecode(responses[1].body) as Map<String, dynamic>;
-      final tilawahExamJson = jsonDecode(responses[2].body) as Map<String, dynamic>;
-      final tahfidzExamJson = jsonDecode(responses[3].body) as Map<String, dynamic>;
-      final tadarusJson = jsonDecode(responses[4].body) as Map<String, dynamic>;
-      final summaryJson = jsonDecode(responses[5].body) as Map<String, dynamic>;
+      final allProgressJson = jsonDecode(responses[0].body) as Map<String, dynamic>;
+      final summaryJson = jsonDecode(responses[1].body) as Map<String, dynamic>;
+
+      final iqraJson = (allProgressJson['iqra'] ?? {}) as Map<String, dynamic>;
+      final tajwidJson = (allProgressJson['tajwid'] ?? {}) as Map<String, dynamic>;
+      final tilawahJson = (allProgressJson['tilawah'] ?? {}) as Map<String, dynamic>;
+      final tahfidzJson = (allProgressJson['tahfidz'] ?? {}) as Map<String, dynamic>;
+      final tadarusJson = (allProgressJson['tadarus'] ?? {}) as Map<String, dynamic>;
+      final tadarusGlobalProgress =
+          (tadarusJson['global_progress'] ?? {}) as Map<String, dynamic>;
 
       if (!mounted) return;
       setState(() {
         _name = userName;
-        _iqra = _extractProgress(iqraJson);
-        _tajwid = _extractProgress(tajwidExamJson);
-        _tilawah = _extractProgress(tilawahExamJson);
-        _tahfidz = _extractProgress(tahfidzExamJson);
-        _tadarus = _extractProgress(tadarusJson);
+        _iqra = _normalizeProgress(iqraJson['combined_progress'] ?? 0);
+        _tajwid = _normalizeProgress(tajwidJson['combined_progress'] ?? 0);
+        _tilawah = _normalizeProgress(tilawahJson['combined_progress'] ?? 0);
+        _tahfidz = _normalizeProgress(tahfidzJson['combined_progress'] ?? 0);
+        _tadarus = _extractProgress(tadarusGlobalProgress);
 
         _iqraScore = _normalizeScore(summaryJson['iqra_score']);
         _tajwidScore = _normalizeScore(summaryJson['tajwid_score']);
