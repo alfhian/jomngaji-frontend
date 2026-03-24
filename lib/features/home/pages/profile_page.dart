@@ -85,25 +85,28 @@ class _ProfilePageState extends State<ProfilePage> {
       final headers = {'Authorization': 'Bearer $token'};
       final userName = (await AuthService.getUserName()) ?? 'Pengguna';
 
-      final responses = await Future.wait([
-        http.get(Uri.parse('$_baseUrl/progress/all'), headers: headers),
-        http.get(Uri.parse('$_baseUrl/progress/summary'), headers: headers),
-      ]);
+      final response = await http.get(
+        Uri.parse('$_baseUrl/progress/all'),
+        headers: headers,
+      );
 
-      for (final res in responses) {
-        if (res.statusCode != 200) {
-          throw Exception('Gagal mengambil data profile: ${res.body}');
-        }
+      if (response.statusCode != 200) {
+        throw Exception('Gagal mengambil data profile: ${response.body}');
       }
 
-      final allProgressJson = jsonDecode(responses[0].body) as Map<String, dynamic>;
-      final summaryJson = jsonDecode(responses[1].body) as Map<String, dynamic>;
+      final allProgressJson = jsonDecode(response.body) as Map<String, dynamic>;
 
       final iqraJson = (allProgressJson['iqra'] ?? {}) as Map<String, dynamic>;
       final tajwidJson = (allProgressJson['tajwid'] ?? {}) as Map<String, dynamic>;
       final tilawahJson = (allProgressJson['tilawah'] ?? {}) as Map<String, dynamic>;
       final tahfidzJson = (allProgressJson['tahfidz'] ?? {}) as Map<String, dynamic>;
       final tadarusJson = (allProgressJson['tadarus'] ?? {}) as Map<String, dynamic>;
+
+      final iqraExam = (iqraJson['exam'] ?? {}) as Map<String, dynamic>;
+      final tajwidExam = (tajwidJson['exam_progress'] ?? {}) as Map<String, dynamic>;
+      final tilawahExam = (tilawahJson['exam_progress'] ?? {}) as Map<String, dynamic>;
+      final tahfidzExam = (tahfidzJson['exam_progress'] ?? {}) as Map<String, dynamic>;
+
       final tadarusGlobalProgress =
           (tadarusJson['global_progress'] ?? {}) as Map<String, dynamic>;
 
@@ -116,10 +119,10 @@ class _ProfilePageState extends State<ProfilePage> {
         _tahfidz = _normalizeProgress(tahfidzJson['combined_progress'] ?? 0);
         _tadarus = _extractProgress(tadarusGlobalProgress);
 
-        _iqraScore = _normalizeScore(summaryJson['iqra_score']);
-        _tajwidScore = _normalizeScore(summaryJson['tajwid_score']);
-        _tilawahScore = _normalizeScore(summaryJson['tilawah_score']);
-        _tahfidzScore = _normalizeScore(summaryJson['tahfidz_score']);
+        _iqraScore = _normalizeScore(iqraExam['score']);
+        _tajwidScore = _normalizeScore(tajwidExam['score']);
+        _tilawahScore = _normalizeScore(tilawahExam['score']);
+        _tahfidzScore = _normalizeScore(tahfidzExam['score']);
       });
     } catch (e) {
       if (!mounted) return;
