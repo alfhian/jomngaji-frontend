@@ -86,12 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final userName = (await AuthService.getUserName()) ?? 'Pengguna';
 
       final responses = await Future.wait([
-        http.get(
-          Uri.parse(
-            '$_baseUrl/progress/all?tajwid_quiz_code=tajwid_level_1&tilawah_quiz_code=tilawah_level_1&tahfidz_quiz_code=tahfidz_level_1',
-          ),
-          headers: headers,
-        ),
+        http.get(Uri.parse('$_baseUrl/progress/all'), headers: headers),
         http.get(Uri.parse('$_baseUrl/progress/summary'), headers: headers),
       ]);
 
