@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tabler_icons/tabler_icons.dart';
+
+import '../../../core/localization/app_localization.dart';
 import '../../../routes/app_routes.dart';
 
 class CategoryList extends StatelessWidget {
@@ -7,11 +9,12 @@ class CategoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final categories = [
-      ("Iqra' Dasar", TablerIcons.book_2, AppRoutes.iqraDasar),
-      ("Tajwid", TablerIcons.microphone, AppRoutes.tajwidDasar),
-      ("Tilawah", TablerIcons.wave_sine, AppRoutes.tilawahMenu),
-      ("Tahfidz", TablerIcons.moon_stars, AppRoutes.tahfidzMenu),
+      (l10n.text('category.iqra'), TablerIcons.book_2, AppRoutes.iqraDasar),
+      (l10n.text('category.tajwid'), TablerIcons.microphone, AppRoutes.tajwidDasar),
+      (l10n.text('category.tilawah'), TablerIcons.wave_sine, AppRoutes.tilawahMenu),
+      (l10n.text('category.tahfidz'), TablerIcons.moon_stars, AppRoutes.tahfidzMenu),
     ];
 
     return GridView.builder(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localization.dart';
 import '../../../routes/app_routes.dart';
 
 class AppBottomNav extends StatelessWidget {
@@ -55,26 +56,26 @@ class AppBottomNav extends StatelessWidget {
           elevation: 0,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           indicatorColor: const Color(0x1F168A66),
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
-              label: 'Home',
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: context.l10n.text('nav.home'),
             ),
             NavigationDestination(
-              icon: Icon(Icons.menu_book_outlined),
-              selectedIcon: Icon(Icons.menu_book_rounded),
-              label: 'Tadarus',
+              icon: const Icon(Icons.menu_book_outlined),
+              selectedIcon: const Icon(Icons.menu_book_rounded),
+              label: context.l10n.text('nav.tadarus'),
             ),
             NavigationDestination(
-              icon: Icon(Icons.auto_stories_outlined),
-              selectedIcon: Icon(Icons.auto_stories_rounded),
-              label: 'Doa',
+              icon: const Icon(Icons.auto_stories_outlined),
+              selectedIcon: const Icon(Icons.auto_stories_rounded),
+              label: context.l10n.text('nav.doa'),
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
-              label: 'Profile',
+              icon: const Icon(Icons.person_outline_rounded),
+              selectedIcon: const Icon(Icons.person_rounded),
+              label: context.l10n.text('nav.profile'),
             ),
           ],
         ),

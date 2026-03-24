@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'core/localization/app_localization.dart';
 import 'features/auth/services/auth_service.dart';
 import 'routes/app_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final loggedIn = await AuthService.isLoggedIn();
-  runApp(JomNgajiApp(isLoggedIn: loggedIn));
+  final languageController = AppLanguageController();
+  await languageController.load();
+
+  runApp(
+    AppLocalizationScope(
+      controller: languageController,
+      child: JomNgajiApp(isLoggedIn: loggedIn),
+    ),
+  );
 }
 
 class JomNgajiApp extends StatelessWidget {
@@ -17,8 +26,10 @@ class JomNgajiApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return MaterialApp(
-      title: 'JomNgaji',
+      title: l10n.text('app.title'),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
