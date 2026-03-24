@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/custom_gradient_appbar.dart';
 import '../../../routes/app_routes.dart';
 import '../widgets/animated_iqra_card.dart';
-import '../../../core/widgets/custom_gradient_appbar.dart';
 
 class IqraDasarPage extends StatelessWidget {
   const IqraDasarPage({super.key});
@@ -10,75 +10,89 @@ class IqraDasarPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomGradientAppBar(title: "Iqra' Dasar"),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF8FBFF), Color(0xFFF1F7FF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            _heroCard(),
+            const SizedBox(height: 18),
+            _iqraItem(
+              context,
+              color: const Color(0xFFEAF3FF),
+              iconColor: const Color(0xFF2563EB),
+              title: 'Huruf Hijaiyah',
+              subtitle: 'Belajar huruf hijaiyah dari Alif sampai Ya.',
+              icon: Icons.menu_book_rounded,
+              route: AppRoutes.materiHijaiyah,
+            ),
+            _iqraItem(
+              context,
+              color: const Color(0xFFFFF1F2),
+              iconColor: const Color(0xFFE11D48),
+              title: 'Latihan Baca',
+              subtitle: 'Harakat dasar dan latihan suku kata interaktif.',
+              icon: Icons.edit_note_rounded,
+              route: AppRoutes.latihanBaca,
+            ),
+            _iqraItem(
+              context,
+              color: const Color(0xFFECFDF3),
+              iconColor: const Color(0xFF16A34A),
+              title: 'Pengucapan (Makhraj)',
+              subtitle: 'Latihan pelafalan huruf dan ketepatan makhraj.',
+              icon: Icons.record_voice_over_rounded,
+              route: AppRoutes.makhraj,
+            ),
+            _iqraItem(
+              context,
+              color: const Color(0xFFFFFBEB),
+              iconColor: const Color(0xFFF59E0B),
+              title: 'Tes Akhir',
+              subtitle: 'Uji kemampuan membaca Iqra secara menyeluruh.',
+              icon: Icons.quiz_rounded,
+              route: AppRoutes.examIqra,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _heroCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF155EEF), Color(0xFF0EA5E9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 10),
-          _sectionTitle("Belajar Iqra"),
-          const SizedBox(height: 15),
-
-          _iqraItem(
-            context,
-            color: const Color(0xFFEDE7FF),
-            iconColor: const Color(0xFF7A49FF),
-            title: "Huruf Hijaiyah",
-            subtitle: "Belajar huruf hijaiyah dari Alif sampai Ya",
-            icon: Icons.menu_book_rounded,
-            route: AppRoutes.materiHijaiyah,
+          Text(
+            'Belajar Iqra Lebih Nyaman',
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
           ),
-
-          _iqraItem(
-            context,
-            color: const Color(0xFFFFE4E9),
-            iconColor: const Color(0xFFFF577F),
-            title: "Latihan Baca",
-            subtitle: "Harakat dasar & latihan suku kata",
-            icon: Icons.edit_rounded,
-            route: AppRoutes.latihanBaca,
+          SizedBox(height: 6),
+          Text(
+            'Mulai dari huruf hijaiyah, lanjut latihan baca dan makhraj, lalu tutup dengan tes akhir.',
+            style: TextStyle(color: Colors.white, fontSize: 13, height: 1.45),
           ),
-
-          _iqraItem(
-            context,
-            color: const Color(0xFFE4FFF5),
-            iconColor: const Color(0xFF20C997),
-            title: "Pengucapan (Makhraj)",
-            subtitle: "Latihan pelafalan huruf & makhraj",
-            icon: Icons.record_voice_over_rounded,
-            route: AppRoutes.pengucapan,
-          ),
-
-          _iqraItem(
-            context,
-            color: const Color(0xFFFFF4D8),
-            iconColor: const Color(0xFFFFC107),
-            title: "Tes Akhir",
-            subtitle: "Uji kemampuan mengaji kamu",
-            icon: Icons.quiz_rounded,
-            route: AppRoutes.examIqra,
-          ),
-
-          const SizedBox(height: 25),
         ],
       ),
     );
   }
 
-  // ================================
-  // SECTION TITLE
-  // ================================
-  Widget _sectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-  // ================================
-  // CUSTOM CARD ITEM
-  // ================================
   Widget _iqraItem(
     BuildContext context, {
     required Color color,
@@ -91,48 +105,46 @@ class IqraDasarPage extends StatelessWidget {
     return AnimatedIqraCard(
       onTap: () => Navigator.pushNamed(context, route),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.all(18),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 5)),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
-                shape: BoxShape.circle,
+                color: iconColor.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 28, color: iconColor),
+              child: Icon(icon, size: 24, color: iconColor),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      )),
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, size: 30, color: Colors.black26),
+            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: iconColor),
           ],
         ),
       ),
     );
   }
-
 }

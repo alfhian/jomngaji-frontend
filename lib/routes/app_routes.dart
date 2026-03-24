@@ -12,7 +12,7 @@ import '../features/home/pages/daily_quiz_page.dart';
 // Iqra
 import '../features/iqra/pages/iqra_dasar_page.dart';
 import '../features/iqra/pages/latihan_baca_page.dart';
-import '../features/iqra/pages/pengucapan_page.dart';
+import '../features/iqra/pages/makhraj_page.dart';
 import '../features/iqra/pages/detail_huruf_hijaiyah_page.dart';
 import '../features/iqra/pages/exam_iqra_page.dart';
 import '../features/iqra/pages/latihan_pengucapan_page.dart';
@@ -52,11 +52,13 @@ import '../features/tajwid/pages/latihan_ghunnah_recording_page.dart';
 import '../features/tilawah/pages/tilawah_menu_page.dart';
 import '../features/tilawah/pages/latihan_tilawah_pilihan_page.dart';
 import '../features/tilawah/pages/latihan_tilawah_recording_page.dart';
+import '../features/tilawah/pages/exam_tilawah_page.dart';
 
 // Tahfidz
 import '../features/tahfidz/pages/tahfidz_menu_page.dart';
 import '../features/tahfidz/pages/latihan_tahfidz_pilihan_page.dart';
 import '../features/tahfidz/pages/latihan_tahfidz_recording_page.dart';
+import '../features/tahfidz/pages/exam_tahfidz_page.dart';
 
 // Tadarus
 import '../features/tadarus/pages/tadarus_menu_page.dart';
@@ -87,6 +89,7 @@ class AppRoutes {
   static const latihanSukuKata = '/latihan-suku-kata';
   static const latihanSukuKataMenu = '/latihan-suku-kata-menu';
   static const pengucapan = '/pengucapan';
+  static const makhraj = '/makhraj';
   static const detailHuruf = '/detail-huruf';
   static const latihanDengar = '/latihan-dengar';
 
@@ -120,11 +123,13 @@ class AppRoutes {
   static const tilawahMenu = "/tilawah-menu";
   static const latihanTilawahPilihan = "/latihan-tilawah-pilihan";
   static const latihanTilawahRecording = "/latihan-tilawah-recording";
+  static const examTilawah = "/exam-tilawah";
 
   // Tahfidz
   static const tahfidzMenu = "/tahfidz-menu";
   static const latihanTahfidzPilihan = "/latihan-tahfidz-pilihan";
   static const latihanTahfidzRecording = "/latihan-tahfidz-recording";
+  static const examTahfidz = "/exam-tahfidz";
 
   // Tadarus
   static const dailyQuiz = "/daily-quiz";
@@ -157,7 +162,8 @@ class AppRoutes {
           lessonId: 0,
         ),
     latihanBaca: (_) => const LatihanBacaPage(),
-    pengucapan: (_) => const PengucapanPage(),
+    pengucapan: (_) => const MakhrajPage(),
+    makhraj: (_) => const MakhrajPage(),
     latihanHarakat: (_) => const LatihanHarakatPage(),
     latihanSukuKata: (_) => const LatihanSukuKataMenuPage(),
     latihanSukuKataMenu: (_) => const LatihanSukuKataMenuPage(),
@@ -193,11 +199,13 @@ class AppRoutes {
     tilawahMenu: (_) => const TilawahMenuPage(),
     latihanTilawahPilihan: (_) => const LatihanTilawahPilihanPage(),
     latihanTilawahRecording: (_) => const LatihanTilawahRecordingPage(),
+    examTilawah: (_) => const ExamTilawahPage(),
 
     // Tahfidz
     tahfidzMenu: (_) => const TahfidzMenuPage(),
     latihanTahfidzPilihan: (_) => const LatihanTahfidzPilihanPage(),
     latihanTahfidzRecording: (_) => const LatihanTahfidzRecordingPage(),
+    examTahfidz: (_) => const ExamTahfidzPage(),
 
     // Tadarus & Quiz
     dailyQuiz: (_) => const DailyQuizPage(),

@@ -1,9 +1,288 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../routes/app_routes.dart';
+import 'package:http/http.dart' as http;
+
+import '../../../core/widgets/custom_gradient_appbar.dart';
+import '../../../features/auth/services/auth_service.dart';
+import '../../../features/iqra/widgets/animated_iqra_card.dart';
+import '../../../routes/app_routes.dart';
+import '../widgets/tilawah_best_score_badge.dart';
 
 class TilawahMenuPage extends StatelessWidget {
   const TilawahMenuPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const CustomGradientAppBar(title: 'Tilawah Dasar'),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF8FBFF), Color(0xFFF1F7FF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            _heroCard(),
+            const SizedBox(height: 18),
+            _levelItem(
+              context,
+              color: const Color(0xFFEAF3FF),
+              iconColor: const Color(0xFF2563EB),
+              title: 'Tingkatan 1 — Pemula',
+              subtitle: 'Fokus kelancaran dasar tilawah dan adab membaca.',
+              icon: Icons.looks_one_rounded,
+              description:
+                  'Mulai dengan bacaan pendek, tempo pelan, dan fokus makhraj dasar.',
+              levelTag: 'Pemula',
+              quizCode: 'tilawah_level_1',
+              lessonId: 1,
+            ),
+            _levelItem(
+              context,
+              color: const Color(0xFFECFDF3),
+              iconColor: const Color(0xFF16A34A),
+              title: 'Tingkatan 2 — Menengah',
+              subtitle: 'Perkuat tartil, waqaf-ibtida, dan kestabilan ritme.',
+              icon: Icons.looks_two_rounded,
+              description:
+                  'Latihan ayat lebih panjang dengan konsistensi hukum tajwid.',
+              levelTag: 'Menengah',
+              quizCode: 'tilawah_level_2',
+              lessonId: 2,
+            ),
+            _levelItem(
+              context,
+              color: const Color(0xFFFFFBEB),
+              iconColor: const Color(0xFFF59E0B),
+              title: 'Tingkatan 3 — Mahir',
+              subtitle: 'Uji ketepatan bacaan dan kepercayaan diri tilawah.',
+              icon: Icons.looks_3_rounded,
+              description:
+                  'Simulasi tilawah lengkap dengan evaluasi pengucapan lanjutan.',
+              levelTag: 'Mahir',
+              quizCode: 'tilawah_level_3',
+              lessonId: 3,
+            ),
+            _examItem(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _heroCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF155EEF), Color(0xFF0EA5E9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Belajar Tilawah Bertahap',
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Pilih 3 tingkatan pembelajaran tilawah. Di setiap tingkat tersedia latihan soal interaktif dan praktek bacaan tilawah.',
+            style: TextStyle(color: Colors.white, fontSize: 13, height: 1.45),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _levelItem(
+    BuildContext context, {
+    required Color color,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String description,
+    required String levelTag,
+    required String quizCode,
+    required int lessonId,
+  }) {
+    return AnimatedIqraCard(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _TilawahLevelPage(
+            title: title,
+            description: description,
+            levelTag: levelTag,
+            quizCode: quizCode,
+            lessonId: lessonId,
+          ),
+        ),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 5)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, size: 24, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: iconColor),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _examItem(BuildContext context) {
+    return AnimatedIqraCard(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.examTilawah),
+      child: Container(
+        margin: const EdgeInsets.only(top: 4, bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF1F2),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 5)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE11D48).withOpacity(0.14),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.verified_rounded, size: 24, color: Color(0xFFE11D48)),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tes Akhir Tilawah',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Selesaikan ujian pilihan ganda dan pengucapan untuk menutup semua level.',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Color(0xFFE11D48)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TilawahLevelPage extends StatelessWidget {
+  final String title;
+  final String description;
+  final String levelTag;
+  final String quizCode;
+  final int lessonId;
+
+  const _TilawahLevelPage({
+    required this.title,
+    required this.description,
+    required this.levelTag,
+    required this.quizCode,
+    required this.lessonId,
+  });
+
+  double _parseProgress(dynamic raw) {
+    final value = double.tryParse('${raw ?? ''}') ?? 0;
+    if (value > 1) return (value / 100).clamp(0.0, 1.0);
+    return value.clamp(0.0, 1.0);
+  }
+
+  Future<double> _loadProgress() async {
+    try {
+      final headers = await AuthService.authHeaders();
+
+      final quizRes = await http.get(
+        Uri.parse('${AuthService.baseUrl}/quizzes/$quizCode/progress'),
+        headers: headers,
+      );
+
+      final recRes = await http.get(
+        Uri.parse('${AuthService.baseUrl}/evaluate/tilawah/last?lesson_id=$lessonId'),
+        headers: headers,
+      );
+
+      double quizProgress = 0;
+      if (quizRes.statusCode == 200) {
+        final body = jsonDecode(quizRes.body);
+        if (body is Map<String, dynamic>) {
+          final passed = body['passed'] == true;
+          quizProgress = passed ? 1.0 : _parseProgress(body['progress']);
+        }
+      }
+
+      double recProgress = 0;
+      if (recRes.statusCode == 200) {
+        final body = jsonDecode(recRes.body);
+        if (body is Map<String, dynamic>) {
+          final score = double.tryParse(
+                '${body['score_final'] ?? body['best_score'] ?? body['score'] ?? 0}',
+              ) ??
+              0;
+          recProgress = score > 0 ? 1.0 : 0.0;
+        }
+      }
+
+      // bobot 50% quiz + 50% recording, konsisten dengan pola tajwid combined.
+      return ((quizProgress * 0.5) + (recProgress * 0.5)).clamp(0.0, 1.0);
+    } catch (_) {
+      return 0;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,8 +292,6 @@ class TilawahMenuPage extends StatelessWidget {
       body: ListView(
         children: [
           _heroSection(context),
-          const SizedBox(height: 20),
-          _theoryCard(), // teori tilawah sederhana
           const SizedBox(height: 20),
           _descriptionSection(),
           const SizedBox(height: 22),
@@ -27,9 +304,6 @@ class TilawahMenuPage extends StatelessWidget {
     );
   }
 
-  // =========================
-  // Hero section
-  // =========================
   Widget _heroSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -61,7 +335,6 @@ class TilawahMenuPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // back button glass
             GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
@@ -90,16 +363,15 @@ class TilawahMenuPage extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              "Tilawah Al-Qur’an",
+              title,
               style: GoogleFonts.poppins(
                 color: Colors.white,
-                fontSize: 32,
+                fontSize: 28,
                 height: 1.25,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 16),
-            // badge level
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               decoration: BoxDecoration(
@@ -113,7 +385,7 @@ class TilawahMenuPage extends StatelessWidget {
                 ],
               ),
               child: Text(
-                "Pemula",
+                levelTag,
                 style: GoogleFonts.poppins(
                   color: Colors.orange.shade700,
                   fontWeight: FontWeight.w700,
@@ -126,58 +398,6 @@ class TilawahMenuPage extends StatelessWidget {
     );
   }
 
-  // =========================
-  // Theory Card
-  // =========================
-  Widget _theoryCard() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF9C4),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Teori Tilawah",
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF5D4037),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "Tilawah adalah membaca Al‑Qur’an dengan tartil, penuh adab dan penghayatan. "
-            "Tujuannya mendekatkan diri kepada Allah, melatih kefasihan, dan membiasakan bacaan indah. "
-            "Adab tilawah: berwudhu, membaca tenang, memulai dengan ta’awudz dan basmalah.",
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: Colors.black87,
-              height: 1.3,
-            ),
-          ),
-          Text(
-            "\nJenis Tilawah:\n"
-            "- Tilawah Tartil: membaca perlahan dan jelas.\n"
-            "- Tilawah Cepat (Hadr): membaca cepat tapi tetap sesuai tajwid.\n"
-            "- Tilawah dengan Basmalah: memulai bacaan dengan Bismillah.\n"
-            "- Tilawah tanpa Basmalah: kondisi tertentu di tengah surat.",
-            style: GoogleFonts.poppins(fontSize: 12, color: Colors.black87, height: 1.3),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // =========================
-  // Description
-  // =========================
   Widget _descriptionSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -185,7 +405,7 @@ class TilawahMenuPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Pilih gaya latihan untuk meningkatkan kemampuan membaca Tilawah Al-Qur’an.",
+            description,
             style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
           ),
           const SizedBox(height: 4),
@@ -198,44 +418,42 @@ class TilawahMenuPage extends StatelessWidget {
     );
   }
 
-  // =========================
-  // Progress section
-  // =========================
   Widget _progressSection() {
-    // TODO: bind ke progress latihan tilawah (XP/penyelesaian)
-    double progressValue = 0.0;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Progress",
-            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progressValue,
-              backgroundColor: Colors.grey.shade300,
-              minHeight: 8,
-              color: const Color(0xFF50D1A0),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "${(progressValue * 100).toInt()}% selesai",
-            style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
-          ),
-        ],
+      child: FutureBuilder<double>(
+        future: _loadProgress(),
+        builder: (_, snapshot) {
+          final progressValue = (snapshot.data ?? 0).clamp(0.0, 1.0);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Progress",
+                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: progressValue,
+                  backgroundColor: Colors.grey.shade300,
+                  minHeight: 8,
+                  color: const Color(0xFF50D1A0),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "${(progressValue * 100).toInt()}% selesai",
+                style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  // =========================
-  // Exercise list
-  // =========================
   Widget _exerciseList(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -244,21 +462,47 @@ class TilawahMenuPage extends StatelessWidget {
           _exerciseItem(
             context,
             title: "Latihan Soal Interaktif",
-            subtitle: "Jawab soal pilihan untuk mengenali bacaan Tilawah",
+            subtitle: "Jawab soal pilihan untuk mengenali pola bacaan Tilawah",
             icon: Icons.quiz_rounded,
             color: const Color(0xFFE3F2FD),
             iconColor: const Color(0xFF2196F3),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.latihanTilawahPilihan),
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.latihanTilawahPilihan,
+              arguments: {
+                'quiz_code': quizCode,
+                'level_tag': levelTag,
+              },
+            ),
+            scoreBadge: TilawahBestScoreBadge(
+              quizCode: quizCode,
+              lessonId: lessonId,
+              label: 'Best score soal',
+            ),
             unlocked: true,
           ),
           _exerciseItem(
             context,
             title: "Praktek Bacaan Tilawah",
-            subtitle: "Simulasi membaca dengan suara (dummy recording)",
+            subtitle: "Simulasi membaca dengan rekaman suara",
             icon: Icons.mic_rounded,
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
-            onTap: () => Navigator.pushNamed(context, AppRoutes.latihanTilawahRecording),
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.latihanTilawahRecording,
+              arguments: {
+                'quiz_code': quizCode,
+                'level_tag': levelTag,
+                'lesson_id': lessonId,
+              },
+            ),
+            scoreBadge: TilawahBestScoreBadge(
+              quizCode: quizCode,
+              lessonId: lessonId,
+              label: 'Best score praktek',
+              source: TilawahBestScoreSource.recording,
+            ),
             unlocked: true,
           ),
         ],
@@ -266,9 +510,6 @@ class TilawahMenuPage extends StatelessWidget {
     );
   }
 
-  // =========================
-  // Single exercise card
-  // =========================
   Widget _exerciseItem(
     BuildContext context, {
     required String title,
@@ -277,6 +518,7 @@ class TilawahMenuPage extends StatelessWidget {
     required Color color,
     required Color iconColor,
     required VoidCallback onTap,
+    required Widget scoreBadge,
     required bool unlocked,
   }) {
     return GestureDetector(
@@ -306,11 +548,13 @@ class TilawahMenuPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      )),
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
@@ -319,6 +563,8 @@ class TilawahMenuPage extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  scoreBadge,
                 ],
               ),
             ),

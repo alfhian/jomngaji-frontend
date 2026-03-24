@@ -4,7 +4,8 @@ import '../../../core/widgets/section_title.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/category_list.dart';
 import '../widgets/header_section.dart';
-import '../widgets/popular_course_list.dart';
+import '../widgets/home_daily_quiz_card.dart';
+import '../widgets/tadarus_card.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -19,23 +20,37 @@ class HomePage extends StatelessWidget {
           child: Column(
             children: [
               const HeaderSection(),
-              const SizedBox(height: 70),
+              const SizedBox(height: 18),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    SectionTitle(title: 'Kategori Ngaji'),
+                    SectionTitle(title: 'Kategori Ngaji', showSeeAll: false),
                     SizedBox(height: 12),
                     CategoryList(),
                     SizedBox(height: 24),
-                    SectionTitle(title: 'Kelas Populer'),
+                    SectionTitle(title: 'Quiz Harian', showSeeAll: false),
                     SizedBox(height: 12),
-                    PopularCourseList(),
-                    SizedBox(height: 80),
+                    HomeDailyQuizCard(),
+                    SizedBox(height: 24),
+                    TadarusCard(),
+                    SizedBox(height: 18),
                   ],
                 ),
-              )
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: SizedBox(
+                  height: 88,
+                  child: Image.asset(
+                    'assets/images/background-mengaji.png',
+                    fit: BoxFit.contain,
+                    alignment: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
             ],
           ),
         ),

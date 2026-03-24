@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class SectionTitle extends StatelessWidget {
   final String title;
   final VoidCallback? onSeeAll;
+  final bool showSeeAll;
 
   const SectionTitle({
     super.key,
     required this.title,
     this.onSeeAll,
+    this.showSeeAll = true,
   });
 
   @override
@@ -22,16 +24,17 @@ class SectionTitle extends StatelessWidget {
               fontWeight: FontWeight.bold,
               fontSize: 16,
             )),
-        TextButton(
-          onPressed: onSeeAll ?? () {},
-          child: Row(
-            children: [
-              Text("Lihat semua", style: TextStyle(color: color)),
-              const SizedBox(width: 4),
-              Icon(Icons.arrow_forward_ios_rounded, color: color, size: 12),
-            ],
+        if (showSeeAll)
+          TextButton(
+            onPressed: onSeeAll ?? () {},
+            child: Row(
+              children: [
+                Text("Lihat semua", style: TextStyle(color: color)),
+                const SizedBox(width: 4),
+                Icon(Icons.arrow_forward_ios_rounded, color: color, size: 12),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }

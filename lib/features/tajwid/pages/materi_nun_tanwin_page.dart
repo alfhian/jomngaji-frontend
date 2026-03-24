@@ -1,6 +1,6 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../../../core/widgets/custom_gradient_appbar.dart';
 
 class MateriNunTanwinPage extends StatefulWidget {
@@ -14,18 +14,23 @@ class _MateriNunTanwinPageState extends State<MateriNunTanwinPage> {
   final AudioPlayer _player = AudioPlayer();
   String? _currentPlaying;
 
+  @override
+  void initState() {
+    super.initState();
+    _player.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _currentPlaying = null);
+    });
+  }
+
   Future<void> _playAudio(String fileName) async {
     if (_currentPlaying == fileName) {
       await _player.stop();
       setState(() => _currentPlaying = null);
-    } else {
-      await _player.play(AssetSource("audio/tajwid/nun-tanwin-$fileName.mp3"));
-      setState(() => _currentPlaying = fileName);
-
-      _player.onPlayerComplete.listen((_) {
-        setState(() => _currentPlaying = null);
-      });
+      return;
     }
+
+    await _player.play(AssetSource('audio/tajwid/nun-tanwin-$fileName.mp3'));
+    setState(() => _currentPlaying = fileName);
   }
 
   @override
@@ -37,60 +42,51 @@ class _MateriNunTanwinPageState extends State<MateriNunTanwinPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F7FF),
-      appBar: const CustomGradientAppBar(title: "Hukum Nun Mati & Tanwin"),
-      body: SafeArea(
+      appBar: const CustomGradientAppBar(title: 'Hukum Nun Mati & Tanwin'),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF8FAFF), Color(0xFFF2F8FF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: ListView(
+          padding: const EdgeInsets.all(20),
           children: [
-            // konten utama dengan padding
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _introCard(),
-                  const SizedBox(height: 20),
-
-                  _hukumCard(
-                    title: "Idzhar",
-                    description: "Nun mati atau tanwin dibaca jelas saat bertemu huruf tenggorokan (ء، هـ، ع، ح، غ، خ).",
-                    example: "مِنْهُمْ",
-                    highlight: ["نْ", "ه"],
-                    audioFile: "idzhar",
-                  ),
-                  _hukumCard(
-                    title: "Idgham",
-                    description: "Nun mati atau tanwin dilebur ke huruf setelahnya.",
-                    example: "مَنْ يَقُولُ",
-                    highlight: ["نْ", "ي"],
-                    audioFile: "idgham",
-                  ),
-                  _hukumCard(
-                    title: "Iqlab",
-                    description: "Nun mati atau tanwin diganti menjadi mim saat bertemu huruf ب.",
-                    example: "أَنْبِيَاءَ",
-                    highlight: ["ن", "ب"],
-                    audioFile: "iqlab",
-                  ),
-                  _hukumCard(
-                    title: "Ikhfa",
-                    description: "Nun mati atau tanwin dibaca samar saat bertemu huruf Ikhfa (15 huruf).",
-                    example: "مِنْ رَبِّهِمْ",
-                    highlight: ["نْ", "ر"],
-                    audioFile: "ikhfa",
-                  ),
-
-                  const SizedBox(height: 30),
-                ],
-              ),
+            _heroCard(),
+            const SizedBox(height: 16),
+            _hukumCard(
+              title: 'Idzhar',
+              tag: 'Dibaca Jelas',
+              description: 'Nun mati/tanwin dibaca jelas saat bertemu huruf tenggorokan.',
+              example: 'مِنْهُمْ',
+              highlight: ['نْ', 'ه'],
+              audioFile: 'idzhar',
             ),
-
-            // 👉 background mengaji ikut scroll, full width tanpa padding
-            Image.asset(
-              "assets/images/background-mengaji.png",
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: 120,
+            _hukumCard(
+              title: 'Idgham',
+              tag: 'Dilebur',
+              description: 'Nun mati/tanwin melebur ke huruf setelahnya.',
+              example: 'مَنْ يَقُولُ',
+              highlight: ['نْ', 'ي'],
+              audioFile: 'idgham',
+            ),
+            _hukumCard(
+              title: 'Iqlab',
+              tag: 'Berubah Mim',
+              description: 'Nun mati/tanwin berubah menjadi mim saat bertemu ب.',
+              example: 'أَنْبِيَاءَ',
+              highlight: ['ن', 'ب'],
+              audioFile: 'iqlab',
+            ),
+            _hukumCard(
+              title: 'Ikhfa',
+              tag: 'Samar',
+              description: 'Nun mati/tanwin dibaca samar saat bertemu huruf ikhfa.',
+              example: 'مِنْ رَبِّهِمْ',
+              highlight: ['نْ', 'ر'],
+              audioFile: 'ikhfa',
             ),
           ],
         ),
@@ -98,61 +94,89 @@ class _MateriNunTanwinPageState extends State<MateriNunTanwinPage> {
     );
   }
 
-
-
-  Widget _introCard() {
+  Widget _heroCard() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF9C4),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2563EB), Color(0xFF14B8A6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       child: Text(
-        "Hukum Nun Mati & Tanwin berlaku saat nun sukun (نْ) atau tanwin (ــًــٍــٌ) bertemu huruf hijaiyah lain. "
-        "Ada 4 jenis hukum: Idzhar, Idgham, Iqlab, dan Ikhfa.",
-        style: GoogleFonts.poppins(fontSize: 13, height: 1.4),
+        'Ada 4 hukum utama: Idzhar, Idgham, Iqlab, dan Ikhfa. Yuk dengarkan contohnya satu per satu.',
+        style: GoogleFonts.poppins(color: Colors.white, fontSize: 13, height: 1.45),
       ),
     );
   }
 
   Widget _hukumCard({
     required String title,
+    required String tag,
     required String description,
     required String example,
     required List<String> highlight,
     required String audioFile,
   }) {
+    final isPlaying = _currentPlaying == audioFile;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
+      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1FFF6),
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 5)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: GoogleFonts.poppins(
-                  fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF2E7D32))),
-          const SizedBox(height: 6),
-          Text(description,
-              style: GoogleFonts.poppins(fontSize: 13, color: Colors.black87, height: 1.4)),
+          Row(
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDBEAFE),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(tag, style: GoogleFonts.poppins(fontSize: 10.5, color: const Color(0xFF1D4ED8))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(description, style: GoogleFonts.poppins(fontSize: 12.8, color: const Color(0xFF475569))),
           const SizedBox(height: 10),
-          RichText(
-            text: TextSpan(
-              style: GoogleFonts.poppins(fontSize: 18, color: Colors.black87),
-              children: _buildHighlightedText(example, highlight),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: RichText(
+              text: TextSpan(
+                style: GoogleFonts.poppins(fontSize: 22, color: const Color(0xFF0F172A)),
+                children: _buildHighlightedText(example, highlight),
+              ),
             ),
           ),
           const SizedBox(height: 12),
-          ElevatedButton.icon(
+          FilledButton.icon(
             onPressed: () => _playAudio(audioFile),
-            icon: Icon(_currentPlaying == audioFile ? Icons.stop : Icons.play_arrow),
-            label: Text(_currentPlaying == audioFile ? "Stop Audio" : "Putar Audio"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF42C88A),
-              foregroundColor: Colors.white,
+            icon: Icon(isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded),
+            label: Text(isPlaying ? 'Stop Audio' : 'Putar Audio'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF16A34A),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
@@ -169,8 +193,8 @@ class _MateriNunTanwinPageState extends State<MateriNunTanwinPage> {
       spans.add(TextSpan(
         text: char,
         style: TextStyle(
-          color: match ? const Color(0xFF42C88A) : Colors.black87,
-          fontWeight: match ? FontWeight.bold : FontWeight.normal,
+          color: match ? const Color(0xFF16A34A) : const Color(0xFF0F172A),
+          fontWeight: match ? FontWeight.w700 : FontWeight.w500,
         ),
       ));
     }

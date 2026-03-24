@@ -9,9 +9,9 @@ class CategoryList extends StatelessWidget {
   Widget build(BuildContext context) {
     final categories = [
       ("Iqra' Dasar", TablerIcons.book_2, AppRoutes.iqraDasar),
-      ("Tajwid", TablerIcons.microphone, null),
-      ("Tilawah", TablerIcons.wave_sine, null),
-      ("Tahfidz", TablerIcons.moon_stars, null),
+      ("Tajwid", TablerIcons.microphone, AppRoutes.tajwidDasar),
+      ("Tilawah", TablerIcons.wave_sine, AppRoutes.tilawahMenu),
+      ("Tahfidz", TablerIcons.moon_stars, AppRoutes.tahfidzMenu),
     ];
 
     return GridView.builder(

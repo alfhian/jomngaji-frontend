@@ -6,12 +6,12 @@ import 'package:flutter_sound/flutter_sound.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jomngaji/models/evaluation_result.dart';
 import 'package:jomngaji/services/evaluation_api.dart';
-import 'package:jomngaji/services/progress_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../data/hijaiyah_data.dart';
 import '../../../core/widgets/custom_gradient_appbar.dart';
+import '../../../services/hijaiyah_service.dart';
 
 class LatihanPengucapanPage extends StatefulWidget {
   final int lessonId;
@@ -221,58 +221,75 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
                     ),
                   ),
                   const SizedBox(height: 22),
-                  // Score ring
-                  SizedBox(
-                    width: 150,
-                    height: 150,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                scoreColor.withOpacity(0.25),
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 130,
-                          height: 130,
-                          child: CircularProgressIndicator(
-                            value: score / 100,
-                            strokeWidth: 12,
-                            backgroundColor: Colors.grey.shade200,
-                            valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
-                          ),
-                        ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "$score",
-                              style: GoogleFonts.poppins(
-                                fontSize: 40,
-                                fontWeight: FontWeight.bold,
-                                color: scoreColor,
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.75, end: 1),
+                    duration: const Duration(milliseconds: 700),
+                    curve: Curves.elasticOut,
+                    builder: (_, scale, child) {
+                      return Transform.scale(scale: scale, child: child);
+                    },
+                    child: SizedBox(
+                      width: 150,
+                      height: 150,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 150,
+                            height: 150,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  scoreColor.withOpacity(0.25),
+                                  Colors.transparent,
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              "Skor",
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
+                          ),
+                          if (score >= 50)
+                            const Positioned(
+                              top: 6,
+                              right: 12,
+                              child: Icon(
+                                Icons.auto_awesome_rounded,
+                                color: Color(0xFFFFC107),
+                                size: 22,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          SizedBox(
+                            width: 130,
+                            height: 130,
+                            child: CircularProgressIndicator(
+                              value: score / 100,
+                              strokeWidth: 12,
+                              backgroundColor: Colors.grey.shade200,
+                              valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
+                            ),
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "$score",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.bold,
+                                  color: scoreColor,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Skor",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -340,8 +357,36 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
       if (score >= 50 && _currentIndex < widget.hurufList.length - 1) {
         setState(() => _currentIndex++);
       } else if (_currentIndex == widget.hurufList.length - 1 && score >= 50) {
-        // unlock lesson terakhir
-        ProgressService.saveLessonScore(1, score.toDouble());
+        _finishLessonAndBack(score.toDouble());
+      }
+    });
+  }
+
+  Future<void> _finishLessonAndBack(double finalScore) async {
+    try {
+      await HijaiyahService.submitLessonProgress(
+        lessonId: widget.lessonId,
+        completedLetters: widget.hurufList.length,
+        score: finalScore,
+      );
+    } catch (e) {
+      if (mounted) {
+        _showError('Progress belum tersimpan sempurna: $e');
+      }
+    }
+
+    try {
+      await HijaiyahService.unlockLesson(widget.lessonId + 1);
+    } catch (_) {
+      // best effort: lesson berikutnya bisa jadi belum ada / premium policy server
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    Future.microtask(() {
+      if (!mounted) return;
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
       }
     });
   }

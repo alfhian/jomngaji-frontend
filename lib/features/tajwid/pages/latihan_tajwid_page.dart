@@ -1,138 +1,190 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../../../core/widgets/custom_gradient_appbar.dart';
 import '../../../../routes/app_routes.dart';
 import '../widgets/animated_tajwid_card.dart';
-import '../../../../core/widgets/custom_gradient_appbar.dart';
 
 class LatihanTajwidMenuPage extends StatelessWidget {
   const LatihanTajwidMenuPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final menus = [
+      (
+        title: 'Latihan Nun Mati & Tanwin',
+        description: 'Soal interaktif dan latihan bacaan Nun Sukun & Tanwin.',
+        route: AppRoutes.latihanNunTanwinMenu,
+        icon: Icons.music_note_rounded,
+        accent: const Color(0xFF22A06B),
+      ),
+      (
+        title: 'Latihan Mim Mati',
+        description: 'Uji pemahaman hukum Mim Sukun dengan soal dan praktik.',
+        route: AppRoutes.latihanMimMatiMenu,
+        icon: Icons.mic_rounded,
+        accent: const Color(0xFF3B82F6),
+      ),
+      (
+        title: 'Latihan Mad',
+        description: 'Latihan panjang bacaan Mad Thabi’i, Jaiz, Wajib, dan lainnya.',
+        route: AppRoutes.latihanMadMenu,
+        icon: Icons.timeline_rounded,
+        accent: const Color(0xFF8B5CF6),
+      ),
+      (
+        title: 'Latihan Qalqalah',
+        description: 'Latihan pantulan suara pada huruf qalqalah.',
+        route: AppRoutes.latihanQalqalahMenu,
+        icon: Icons.volume_up_rounded,
+        accent: const Color(0xFFF97316),
+      ),
+      (
+        title: 'Latihan Ghunnah',
+        description: 'Latihan dengung pada Nun dan Mim tasydid.',
+        route: AppRoutes.latihanGhunnahMenu,
+        icon: Icons.surround_sound_rounded,
+        accent: const Color(0xFFEC4899),
+      ),
+    ];
+
     return Scaffold(
-      appBar: const CustomGradientAppBar(title: "Latihan Tajwid"),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          const SizedBox(height: 10),
-          _sectionTitle("Latihan Hukum Tajwid"),
-          const SizedBox(height: 15),
-
-          _tajwidItem(
-            context,
-            color: const Color(0xFFE3F2FD),
-            iconColor: const Color(0xFF2196F3),
-            title: "Latihan Nun Mati & Tanwin",
-            subtitle: "Soal interaktif dan praktek bacaan hukum Nun Sukun & Tanwin",
-            icon: Icons.music_note_rounded,
-            route: AppRoutes.latihanNunTanwinMenu,
+      appBar: const CustomGradientAppBar(title: 'Latihan Tajwid'),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF7F9FF), Color(0xFFEFF7FF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-
-          _tajwidItem(
-            context,
-            color: const Color(0xFFFFEBEE),
-            iconColor: const Color(0xFFE53935),
-            title: "Latihan Mim Mati",
-            subtitle: "Uji pemahaman hukum Mim Sukun dengan soal & praktek suara",
-            icon: Icons.mic_rounded,
-            route: AppRoutes.latihanMimMatiMenu,
-          ),
-
-          _tajwidItem(
-            context,
-            color: const Color(0xFFE8F5E9),
-            iconColor: const Color(0xFF43A047),
-            title: "Latihan Mad",
-            subtitle: "Latihan panjang bacaan (Mad Thabi’i, Jaiz, Wajib, dll.)",
-            icon: Icons.timeline_rounded,
-            route: AppRoutes.latihanMadMenu,
-          ),
-
-          _tajwidItem(
-            context,
-            color: const Color(0xFFFFF3E0),
-            iconColor: const Color(0xFFFB8C00),
-            title: "Latihan Qalqalah",
-            subtitle: "Latihan pantulan suara pada huruf qalqalah",
-            icon: Icons.volume_up_rounded,
-            route: AppRoutes.latihanQalqalahMenu,
-          ),
-
-          _tajwidItem(
-            context,
-            color: const Color(0xFFEDE7F6),
-            iconColor: const Color(0xFF5E35B1),
-            title: "Latihan Ghunnah",
-            subtitle: "Latihan dengung pada Nun & Mim tasydid",
-            icon: Icons.surround_sound_rounded,
-            route: AppRoutes.latihanGhunnahMenu,
-          ),
-
-          const SizedBox(height: 25),
-        ],
+        ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+          children: [
+            _introCard(),
+            const SizedBox(height: 18),
+            ...menus.map(
+              (item) => _tajwidItem(
+                context,
+                title: item.title,
+                description: item.description,
+                route: item.route,
+                icon: item.icon,
+                accent: item.accent,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
+  Widget _introCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF155EEF), Color(0xFF22A06B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33155EEF),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.fact_check_rounded, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                'Latihan Hukum Tajwid',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Pilih materi latihan sesuai hukum tajwid untuk memperkuat pemahaman dan bacaan.',
+            style: GoogleFonts.poppins(
+              color: Colors.white.withOpacity(0.95),
+              fontSize: 13,
+              height: 1.45,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _tajwidItem(
     BuildContext context, {
-    required Color color,
-    required Color iconColor,
     required String title,
-    required String subtitle,
-    required IconData icon,
+    required String description,
     required String route,
+    required IconData icon,
+    required Color accent,
   }) {
     return AnimatedTajwidCard(
       onTap: () => Navigator.pushNamed(context, route),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.all(18),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(26),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: accent.withOpacity(0.18)),
+          boxShadow: const [
+            BoxShadow(color: Color(0x12000000), blurRadius: 14, offset: Offset(0, 6)),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
-                shape: BoxShape.circle,
+                color: accent.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 28, color: iconColor),
+              child: Icon(icon, color: accent),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      )),
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
+                    description,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12.8,
+                      color: const Color(0xFF475569),
+                      height: 1.45,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, size: 30, color: Colors.black26),
+            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: accent),
           ],
         ),
       ),

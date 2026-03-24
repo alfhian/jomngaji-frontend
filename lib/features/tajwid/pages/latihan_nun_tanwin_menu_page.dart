@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../routes/app_routes.dart';
+import '../../../../services/tajwid_quiz_service.dart';
+import 'widgets/tajwid_best_score_badge.dart';
 
 class LatihanNunTanwinMenuPage extends StatelessWidget {
   const LatihanNunTanwinMenuPage({super.key});
@@ -154,34 +156,49 @@ class LatihanNunTanwinMenuPage extends StatelessWidget {
   // =========================
   // Progress section
   // =========================
+  Future<double> _loadProgress() async {
+    try {
+      final combined = await TajwidQuizService.getCombinedProgress('nun_tanwin');
+      final raw = combined['combined_progress'];
+      final value = double.tryParse('${raw ?? 0}') ?? 0;
+      return value.clamp(0.0, 1.0);
+    } catch (_) {
+      return 0;
+    }
+  }
+
   Widget _progressSection() {
-    // TODO: bind ke progress latihan Nun Tanwin
-    double progressValue = 0.0;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Progress",
-            style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progressValue,
-              backgroundColor: Colors.grey.shade300,
-              minHeight: 8,
-              color: const Color(0xFF50D1A0),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "${(progressValue * 100).toInt()}% selesai",
-            style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
-          ),
-        ],
+      child: FutureBuilder<double>(
+        future: _loadProgress(),
+        builder: (_, snapshot) {
+          final progressValue = (snapshot.data ?? 0).clamp(0.0, 1.0);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Progress",
+                style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: progressValue,
+                  backgroundColor: Colors.grey.shade300,
+                  minHeight: 8,
+                  color: const Color(0xFF50D1A0),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "${(progressValue * 100).toInt()}% selesai",
+                style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -202,16 +219,18 @@ class LatihanNunTanwinMenuPage extends StatelessWidget {
             color: const Color(0xFFE3F2FD),
             iconColor: const Color(0xFF2196F3),
             onTap: () => Navigator.pushNamed(context, AppRoutes.latihanNunTanwinPilihan),
+            scoreBadge: const TajwidBestScoreBadge(quizCode: 'nun_tanwin', label: 'Best score soal'),
             unlocked: true,
           ),
           _exerciseItem(
             context,
             title: "Praktek Bacaan Tajwid",
-            subtitle: "Simulasi membaca dengan suara (dummy recording)",
+            subtitle: "Simulasi membaca dengan suara (rekaman suara)",
             icon: Icons.mic_rounded,
             color: const Color(0xFFFFEBEE),
             iconColor: const Color(0xFFE53935),
             onTap: () => Navigator.pushNamed(context, AppRoutes.latihanNunTanwinRecording),
+            scoreBadge: const TajwidBestScoreBadge(quizCode: 'nun_tanwin', label: 'Best score praktek', source: TajwidBestScoreSource.recording),
             unlocked: true,
           ),
         ],
@@ -230,6 +249,7 @@ class LatihanNunTanwinMenuPage extends StatelessWidget {
     required Color color,
     required Color iconColor,
     required VoidCallback onTap,
+    required Widget scoreBadge,
     required bool unlocked,
   }) {
     return GestureDetector(
@@ -273,6 +293,8 @@ class LatihanNunTanwinMenuPage extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  scoreBadge,
                 ],
               ),
             ),

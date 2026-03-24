@@ -1,141 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-class LatihanNunTanwinRecordingPage extends StatefulWidget {
+import 'widgets/tajwid_recording_practice_page.dart';
+
+class LatihanNunTanwinRecordingPage extends StatelessWidget {
   const LatihanNunTanwinRecordingPage({super.key});
 
   @override
-  State<LatihanNunTanwinRecordingPage> createState() =>
-      _LatihanNunTanwinRecordingPageState();
-}
-
-class _LatihanNunTanwinRecordingPageState extends State<LatihanNunTanwinRecordingPage> {
-  bool _isRecording = false;
-  bool _hasAudio = false;
-
-  void _toggleRecording() {
-    setState(() {
-      if (_isRecording) {
-        _isRecording = false;
-        _hasAudio = true; // dummy selesai rekaman
-      } else {
-        _isRecording = true;
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Latihan Nun Mati & Tanwin (Recording)")),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                // Box kuning deskripsi
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF9C4),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(
-                    "Latihan membaca hukum Nun Mati & Tanwin dengan praktek suara.\n"
-                    "Tekan tombol mic untuk mulai rekam, lalu putar dan nilai bacaanmu.",
-                    style: GoogleFonts.poppins(fontSize: 13, height: 1.4),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Ayat contoh di tengah & besar dengan highlight Nun/Tanwin
-                Center(
-                  child: RichText(
-                    textAlign: TextAlign.center,
-                    text: const TextSpan(
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                      children: [
-                        TextSpan(text: "مِنْ"),
-                        TextSpan(
-                          text: " نُورٍ",
-                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                // Tombol rekam
-                Center(
-                  child: GestureDetector(
-                    onTap: _toggleRecording,
-                    child: Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: _isRecording ? Colors.red : const Color(0xFF42C88A),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _isRecording ? Icons.stop : Icons.mic,
-                        color: Colors.white,
-                        size: 38,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    _isRecording ? "Sedang merekam..." : "Tap untuk rekam",
-                    style: GoogleFonts.poppins(fontSize: 13),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Tombol playback & evaluasi (dummy)
-                if (_hasAudio)
-                  Column(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.play_arrow),
-                        label: const Text("Putar rekaman"),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5E60CE)),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.auto_awesome),
-                        label: const Text("Nilai Pengucapan"),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade700),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-
-          // Background full width di bawah
-          SizedBox(
-            width: double.infinity,
-            child: Image.asset(
-              "assets/images/background-mengaji.png",
-              fit: BoxFit.cover,
-              height: 100,
-            ),
-          ),
-        ],
-      ),
+    return const TajwidRecordingPracticePage(
+      title: 'Recording Nun Mati & Tanwin',
+      accent: Color(0xFF22A06B),
+      quizCode: 'nun_tanwin',
+      intro: 'Latih pelafalan Nun Mati & Tanwin dengan rekaman. Ulangi sampai bacaan makin stabil.',
+      prompts: [
+        RecordingPrompt(arabicText: 'مِنْ نُورٍ', tip: 'Perjelas hukum Idzhar.'),
+        RecordingPrompt(arabicText: 'مَنْ يَقُولُ', tip: 'Perhatikan Idgham dengan dengung cukup.'),
+        RecordingPrompt(arabicText: 'أَنْبِيَاءَ', tip: 'Iqlab: ubah nun menjadi bunyi mim samar.'),
+        RecordingPrompt(arabicText: 'مِنْ رَبِّهِمْ', tip: 'Ikhfa: bacaan samar, tidak terlalu jelas.'),
+      ],
     );
   }
 }

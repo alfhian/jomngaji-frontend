@@ -116,7 +116,7 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
             ),
             const SizedBox(height: 28),
             Text(
-              'Latihan Suku Kata',
+              'Latihan 2',
               style: GoogleFonts.poppins(
                 color: Colors.white.withOpacity(0.9),
                 fontSize: 18,
@@ -273,9 +273,7 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    level.description.isEmpty
-                        ? 'Soal: ${level.totalQuestions}'
-                        : level.description,
+                    level.description.isEmpty ? 'Soal: ${level.totalQuestions}' : level.description,
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: Colors.black54,
