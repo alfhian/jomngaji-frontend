@@ -3,7 +3,10 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const baseUrl = "http://192.168.1.141:4000";
+  static const baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: "http://192.168.1.141:4000",
+  );
 
   static const _keyIsLoggedIn = 'isLoggedIn';
   static const _keyAccessToken = 'access_token';
@@ -61,10 +64,19 @@ class AuthService {
     await _saveSessionFromResponse(data);
   }
 
-  static Future<void> loginWithGoogle(String idToken) async {
+  static Future<void> loginWithGoogle(
+    String token, {
+    String? accessToken,
+  }) async {
+    final body = {
+      'token': token,
+      if (accessToken != null && accessToken.isNotEmpty)
+        'access_token': accessToken,
+    };
+
     final res = await http.post(
       Uri.parse('$baseUrl/auth/google'),
-      body: {'token': idToken},
+      body: body,
     );
 
     if (res.statusCode != 200) {
