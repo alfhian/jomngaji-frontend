@@ -65,11 +65,11 @@ class AuthService {
   }
 
   static Future<void> loginWithGoogle(
-    String idToken, {
+    String token, {
     String? accessToken,
   }) async {
     final body = {
-      'token': idToken,
+      'token': token,
       if (accessToken != null && accessToken.isNotEmpty)
         'access_token': accessToken,
     };
