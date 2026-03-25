@@ -18,8 +18,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  static const _baseUrl = 'http://192.168.1.141:4000';
-
   bool _loading = true;
   String _name = 'Pengguna';
 
@@ -86,12 +84,35 @@ class _ProfilePageState extends State<ProfilePage> {
       final headers = {'Authorization': 'Bearer $token'};
       final userName = (await AuthService.getUserName()) ?? 'Pengguna';
 
-      final response = await http.get(
-        Uri.parse('$_baseUrl/progress/all'),
+      var response = await http.get(
+        Uri.parse('${AuthService.baseUrl}/progress/all'),
         headers: headers,
       );
 
+      if (response.statusCode == 404) {
+        response = await http.get(
+          Uri.parse('${AuthService.baseUrl}/progress'),
+          headers: headers,
+        );
+      }
+
       if (response.statusCode != 200) {
+        if (response.statusCode == 404) {
+          if (!mounted) return;
+          setState(() {
+            _name = userName;
+            _iqra = 0;
+            _tajwid = 0;
+            _tilawah = 0;
+            _tahfidz = 0;
+            _tadarus = 0;
+            _iqraScore = 0;
+            _tajwidScore = 0;
+            _tilawahScore = 0;
+            _tahfidzScore = 0;
+          });
+          return;
+        }
         throw Exception('Gagal mengambil data profile: ${response.body}');
       }
 

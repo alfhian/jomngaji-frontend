@@ -89,16 +89,22 @@ class _HeaderSectionState extends State<HeaderSection> {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  width: 34,
-                  height: 34,
-                  padding: const EdgeInsets.all(4),
+                  width: 42,
+                  height: 42,
+                  padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Image.asset(
-                    'assets/images/icon-jomngaji.png',
-                    fit: BoxFit.cover,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Transform.scale(
+                      scale: 1.22,
+                      child: Image.asset(
+                        'assets/images/icon-jomngaji.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
                 ),
               ],
