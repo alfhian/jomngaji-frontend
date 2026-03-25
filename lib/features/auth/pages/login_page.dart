@@ -14,7 +14,11 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   static const String _googleWebClientId =
-      String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+      String.fromEnvironment(
+        'GOOGLE_WEB_CLIENT_ID',
+        defaultValue:
+            '861364329931-lc09h3isvjl7i5shbir15nf0jbj7bros.apps.googleusercontent.com',
+      );
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -56,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
       if (idToken == null || idToken.isEmpty) {
         throw Exception(
           'Google ID token tidak tersedia. '
-          'Set GOOGLE_WEB_CLIENT_ID via --dart-define dan pastikan OAuth client sudah benar.',
+          'Pastikan GOOGLE_WEB_CLIENT_ID benar (bisa override via --dart-define).',
         );
       }
 
