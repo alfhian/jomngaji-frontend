@@ -57,9 +57,9 @@ class AppLocalization {
       AppLanguage.en: 'Profile',
     },
     'home.greeting': {
-      AppLanguage.ms: 'Assalamu\'alaikum, Dylan',
-      AppLanguage.id: 'Assalamu\'alaikum, Dylan',
-      AppLanguage.en: 'Assalamu\'alaikum, Dylan',
+      AppLanguage.ms: 'Assalamu\'alaikum, {name}',
+      AppLanguage.id: 'Assalamu\'alaikum, {name}',
+      AppLanguage.en: 'Assalamu\'alaikum, {name}',
     },
     'home.subtitle': {
       AppLanguage.ms: 'Semoga ngaji hari ini berkat ✨',
