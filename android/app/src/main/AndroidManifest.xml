@@ -17,7 +17,7 @@
     <application
         android:name="${applicationName}"
         android:label="jomngaji"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher_icon"
         android:hardwareAccelerated="true"
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true">
