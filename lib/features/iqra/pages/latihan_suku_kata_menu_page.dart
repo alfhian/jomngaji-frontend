@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/widgets/premium_upgrade_dialog.dart';
 import '../../../services/suku_kata_service.dart';
 import 'latihan_suku_kata_page.dart';
 
@@ -235,14 +236,29 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
     final unlocked = level.isUnlocked;
 
     return GestureDetector(
-      onTap: unlocked
-          ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => LatihanSukuKataPage(level: level),
-                ),
-              ).then((_) => _loadLevels())
-          : null,
+      onTap: () async {
+        if (level.isPremium) {
+          await runWithPremiumGate(
+            context,
+            featureName: level.title,
+            onAllowed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => LatihanSukuKataPage(level: level),
+              ),
+            ).then((_) => _loadLevels()),
+          );
+          return;
+        }
+        if (unlocked) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LatihanSukuKataPage(level: level),
+            ),
+          ).then((_) => _loadLevels());
+        }
+      },
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(

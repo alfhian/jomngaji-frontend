@@ -98,21 +98,38 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               children: [
                 Container(
-                  width: 82,
-                  height: 82,
-                  padding: const EdgeInsets.all(12),
+                  width: 122,
+                  height: 122,
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF2563EB), Color(0xFF38BDF8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(34),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x22000000),
-                        blurRadius: 20,
-                        offset: Offset(0, 8),
+                        color: Color(0x452563EB),
+                        blurRadius: 26,
+                        offset: Offset(0, 12),
                       ),
                     ],
                   ),
-                  child: Image.asset('assets/images/icon-jomngaji.png'),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Transform.scale(
+                      scale: 1.28,
+                      child: Image.asset(
+                        'assets/images/icon-jomngaji.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 18),
                 Text(

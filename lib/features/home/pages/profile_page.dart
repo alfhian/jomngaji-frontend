@@ -18,8 +18,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  static const _baseUrl = 'http://192.168.1.141:4000';
-
   bool _loading = true;
   String _name = 'Pengguna';
 
@@ -85,45 +83,42 @@ class _ProfilePageState extends State<ProfilePage> {
 
       final headers = {'Authorization': 'Bearer $token'};
       final userName = (await AuthService.getUserName()) ?? 'Pengguna';
-
-      final response = await http.get(
-        Uri.parse('$_baseUrl/progress/all'),
+      final avgResponse = await http.get(
+        Uri.parse('${AuthService.baseUrl}/progress/average'),
+        headers: headers,
+      );
+      final summaryResponse = await http.get(
+        Uri.parse('${AuthService.baseUrl}/progress/summary'),
+        headers: headers,
+      );
+      final tadarusResponse = await http.get(
+        Uri.parse('${AuthService.baseUrl}/tadarus/global-progress'),
         headers: headers,
       );
 
-      if (response.statusCode != 200) {
-        throw Exception('Gagal mengambil data profile: ${response.body}');
-      }
-
-      final allProgressJson = jsonDecode(response.body) as Map<String, dynamic>;
-
-      final iqraJson = (allProgressJson['iqra'] ?? {}) as Map<String, dynamic>;
-      final tajwidJson = (allProgressJson['tajwid'] ?? {}) as Map<String, dynamic>;
-      final tilawahJson = (allProgressJson['tilawah'] ?? {}) as Map<String, dynamic>;
-      final tahfidzJson = (allProgressJson['tahfidz'] ?? {}) as Map<String, dynamic>;
-      final tadarusJson = (allProgressJson['tadarus'] ?? {}) as Map<String, dynamic>;
-
-      final iqraExam = (iqraJson['exam'] ?? {}) as Map<String, dynamic>;
-      final tajwidExam = (tajwidJson['exam_progress'] ?? {}) as Map<String, dynamic>;
-      final tilawahExam = (tilawahJson['exam_progress'] ?? {}) as Map<String, dynamic>;
-      final tahfidzExam = (tahfidzJson['exam_progress'] ?? {}) as Map<String, dynamic>;
-
-      final tadarusGlobalProgress =
-          (tadarusJson['global_progress'] ?? {}) as Map<String, dynamic>;
+      final avgJson = avgResponse.statusCode == 200
+          ? (jsonDecode(avgResponse.body) as Map<String, dynamic>)
+          : <String, dynamic>{};
+      final summaryJson = summaryResponse.statusCode == 200
+          ? (jsonDecode(summaryResponse.body) as Map<String, dynamic>)
+          : <String, dynamic>{};
+      final tadarusJson = tadarusResponse.statusCode == 200
+          ? (jsonDecode(tadarusResponse.body) as Map<String, dynamic>)
+          : <String, dynamic>{};
 
       if (!mounted) return;
       setState(() {
         _name = userName;
-        _iqra = _normalizeProgress(iqraJson['combined_progress'] ?? 0);
-        _tajwid = _normalizeProgress(tajwidJson['combined_progress'] ?? 0);
-        _tilawah = _normalizeProgress(tilawahJson['combined_progress'] ?? 0);
-        _tahfidz = _normalizeProgress(tahfidzJson['combined_progress'] ?? 0);
-        _tadarus = _extractProgress(tadarusGlobalProgress);
+        _iqra = _normalizeProgress(avgJson['iqra_avg'] ?? 0);
+        _tajwid = _normalizeProgress(avgJson['tajwid_avg'] ?? 0);
+        _tilawah = _normalizeProgress(avgJson['tilawah_avg'] ?? 0);
+        _tahfidz = _normalizeProgress(avgJson['tahfidz_avg'] ?? 0);
+        _tadarus = _extractProgress(tadarusJson);
 
-        _iqraScore = _normalizeScore(iqraExam['score']);
-        _tajwidScore = _normalizeScore(tajwidExam['score']);
-        _tilawahScore = _normalizeScore(tilawahExam['score']);
-        _tahfidzScore = _normalizeScore(tahfidzExam['score']);
+        _iqraScore = _normalizeScore(summaryJson['iqra_score']);
+        _tajwidScore = _normalizeScore(summaryJson['tajwid_score']);
+        _tilawahScore = _normalizeScore(summaryJson['tilawah_score']);
+        _tahfidzScore = _normalizeScore(summaryJson['tahfidz_score']);
       });
     } catch (e) {
       if (!mounted) return;
@@ -282,44 +277,64 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _languageCard() {
     final languageController = AppLocalizationScope.controllerOf(context);
+    final currentLanguageLabel = context.l10n.text(languageController.value.key);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.language_rounded, color: Color(0xFF0F172A)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.text('profile.languageTitle'),
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  context.l10n.text('profile.languageSubtitle'),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.black54,
-                  ),
-                ),
-              ],
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.language_rounded,
+              color: Color(0xFF0F172A),
+              size: 18,
             ),
           ),
           const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.text('profile.languageTitle'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
           DropdownButtonHideUnderline(
             child: DropdownButton<AppLanguage>(
               value: languageController.value,
+              isDense: true,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: const Color(0xFF0F172A),
+                fontWeight: FontWeight.w600,
+              ),
+              selectedItemBuilder: (context) {
+                return AppLanguage.values.map((_) {
+                  return Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      currentLanguageLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList();
+              },
               items: AppLanguage.values.map((language) {
                 return DropdownMenuItem(
                   value: language,

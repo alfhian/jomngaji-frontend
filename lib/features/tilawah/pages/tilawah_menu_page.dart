@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/widgets/custom_gradient_appbar.dart';
+import '../../../core/widgets/premium_upgrade_dialog.dart';
 import '../../../features/auth/services/auth_service.dart';
 import '../../../features/iqra/widgets/animated_iqra_card.dart';
 import '../../../routes/app_routes.dart';
@@ -117,15 +118,19 @@ class TilawahMenuPage extends StatelessWidget {
     required int lessonId,
   }) {
     return AnimatedIqraCard(
-      onTap: () => Navigator.push(
+      onTap: () => runWithPremiumGate(
         context,
-        MaterialPageRoute(
-          builder: (_) => _TilawahLevelPage(
-            title: title,
-            description: description,
-            levelTag: levelTag,
-            quizCode: quizCode,
-            lessonId: lessonId,
+        featureName: title,
+        onAllowed: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _TilawahLevelPage(
+              title: title,
+              description: description,
+              levelTag: levelTag,
+              quizCode: quizCode,
+              lessonId: lessonId,
+            ),
           ),
         ),
       ),
@@ -166,6 +171,15 @@ class TilawahMenuPage extends StatelessWidget {
                 ],
               ),
             ),
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+            ),
             Icon(Icons.arrow_forward_ios_rounded, size: 16, color: iconColor),
           ],
         ),
@@ -175,7 +189,11 @@ class TilawahMenuPage extends StatelessWidget {
 
   Widget _examItem(BuildContext context) {
     return AnimatedIqraCard(
-      onTap: () => Navigator.pushNamed(context, AppRoutes.examTilawah),
+      onTap: () => runWithPremiumGate(
+        context,
+        featureName: 'Tes Akhir Tilawah',
+        onAllowed: () => Navigator.pushNamed(context, AppRoutes.examTilawah),
+      ),
       child: Container(
         margin: const EdgeInsets.only(top: 4, bottom: 14),
         padding: const EdgeInsets.all(16),
