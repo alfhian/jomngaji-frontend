@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 
 import '../../../core/widgets/custom_gradient_appbar.dart';
+import '../../../core/widgets/premium_upgrade_dialog.dart';
 import '../../../models/surah.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/services/auth_service.dart';
@@ -586,6 +587,10 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
 
         return GestureDetector(
           onTap: () {
+            if (s.number != 1) {
+              showPremiumUpgradeDialog(context, featureName: s.name);
+              return;
+            }
             Navigator.pushNamed(
               context,
               AppRoutes.tadarus,
@@ -654,6 +659,22 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
                 const SizedBox(width: 10),
                 Column(
                   children: [
+                    if (s.number != 1)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'PRO',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     IconButton(
                       onPressed: () async {
                         setState(() => _previewSurahIndex = index);

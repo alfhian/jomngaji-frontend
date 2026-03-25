@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/premium_upgrade_dialog.dart';
 import '../../../../core/widgets/custom_gradient_appbar.dart';
 import '../../../../routes/app_routes.dart';
 import '../widgets/animated_tajwid_card.dart';
@@ -49,6 +50,7 @@ class TajwidDasarPage extends StatelessWidget {
               subtitle: 'Uji kemampuan tajwid kamu secara menyeluruh.',
               icon: Icons.quiz_rounded,
               route: AppRoutes.examTajwid,
+              isPro: true,
             ),
           ],
         ),
@@ -92,9 +94,16 @@ class TajwidDasarPage extends StatelessWidget {
     required String subtitle,
     required IconData icon,
     required String route,
+    bool isPro = false,
   }) {
     return AnimatedTajwidCard(
-      onTap: () => Navigator.pushNamed(context, route),
+      onTap: () {
+        if (isPro) {
+          showPremiumUpgradeDialog(context, featureName: title);
+          return;
+        }
+        Navigator.pushNamed(context, route);
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(16),
@@ -132,6 +141,16 @@ class TajwidDasarPage extends StatelessWidget {
                 ],
               ),
             ),
+            if (isPro)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+              ),
             Icon(Icons.arrow_forward_ios_rounded, size: 16, color: iconColor),
           ],
         ),

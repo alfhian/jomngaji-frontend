@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/widgets/premium_upgrade_dialog.dart';
 import '../../../../core/widgets/custom_gradient_appbar.dart';
 import '../../../../routes/app_routes.dart';
 import '../widgets/animated_tajwid_card.dart';
@@ -17,6 +18,7 @@ class LatihanTajwidMenuPage extends StatelessWidget {
         route: AppRoutes.latihanNunTanwinMenu,
         icon: Icons.music_note_rounded,
         accent: const Color(0xFF22A06B),
+        isPro: false,
       ),
       (
         title: 'Latihan Mim Mati',
@@ -24,6 +26,7 @@ class LatihanTajwidMenuPage extends StatelessWidget {
         route: AppRoutes.latihanMimMatiMenu,
         icon: Icons.mic_rounded,
         accent: const Color(0xFF3B82F6),
+        isPro: true,
       ),
       (
         title: 'Latihan Mad',
@@ -31,6 +34,7 @@ class LatihanTajwidMenuPage extends StatelessWidget {
         route: AppRoutes.latihanMadMenu,
         icon: Icons.timeline_rounded,
         accent: const Color(0xFF8B5CF6),
+        isPro: true,
       ),
       (
         title: 'Latihan Qalqalah',
@@ -38,6 +42,7 @@ class LatihanTajwidMenuPage extends StatelessWidget {
         route: AppRoutes.latihanQalqalahMenu,
         icon: Icons.volume_up_rounded,
         accent: const Color(0xFFF97316),
+        isPro: true,
       ),
       (
         title: 'Latihan Ghunnah',
@@ -45,6 +50,7 @@ class LatihanTajwidMenuPage extends StatelessWidget {
         route: AppRoutes.latihanGhunnahMenu,
         icon: Icons.surround_sound_rounded,
         accent: const Color(0xFFEC4899),
+        isPro: true,
       ),
     ];
 
@@ -71,6 +77,7 @@ class LatihanTajwidMenuPage extends StatelessWidget {
                 route: item.route,
                 icon: item.icon,
                 accent: item.accent,
+                isPro: item.isPro,
               ),
             ),
           ],
@@ -135,9 +142,16 @@ class LatihanTajwidMenuPage extends StatelessWidget {
     required String route,
     required IconData icon,
     required Color accent,
+    required bool isPro,
   }) {
     return AnimatedTajwidCard(
-      onTap: () => Navigator.pushNamed(context, route),
+      onTap: () {
+        if (isPro) {
+          showPremiumUpgradeDialog(context, featureName: title);
+          return;
+        }
+        Navigator.pushNamed(context, route);
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(16),
@@ -184,6 +198,16 @@ class LatihanTajwidMenuPage extends StatelessWidget {
                 ],
               ),
             ),
+            if (isPro)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+              ),
             Icon(Icons.arrow_forward_ios_rounded, size: 16, color: accent),
           ],
         ),

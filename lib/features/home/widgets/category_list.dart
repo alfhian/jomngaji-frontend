@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tabler_icons/tabler_icons.dart';
 
 import '../../../core/localization/app_localization.dart';
+import '../../../core/widgets/premium_upgrade_dialog.dart';
 import '../../../routes/app_routes.dart';
 
 class CategoryList extends StatelessWidget {
@@ -48,9 +49,15 @@ class CategoryList extends StatelessWidget {
     String? route,
   }) {
     return GestureDetector(
-      onTap: route != null
-          ? () => Navigator.pushNamed(context, route)
-          : null,
+      onTap: route == null
+          ? null
+          : () {
+              if (route == AppRoutes.tilawahMenu || route == AppRoutes.tahfidzMenu) {
+                showPremiumUpgradeDialog(context, featureName: title);
+                return;
+              }
+              Navigator.pushNamed(context, route);
+            },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -90,6 +97,20 @@ class CategoryList extends StatelessWidget {
                 height: 1.2,
               ),
             ),
+            if (route == AppRoutes.tilawahMenu || route == AppRoutes.tahfidzMenu) ...[
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: const Text(
+                  'PRO',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 10),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 4),
 

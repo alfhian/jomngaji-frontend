@@ -32,7 +32,7 @@ class _HeaderSectionState extends State<HeaderSection> {
 
     return Container(
       width: double.infinity,
-      height: 286,
+      constraints: const BoxConstraints(minHeight: 230),
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.only(
@@ -89,13 +89,13 @@ class _HeaderSectionState extends State<HeaderSection> {
                 ),
               ],
             ),
-            const Spacer(),
+            const SizedBox(height: 14),
             Text(
               l10n.text('home.greeting', params: {'name': _userName}),
               style: GoogleFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
-                fontSize: 20,
+                fontSize: 17,
               ),
             ),
             const SizedBox(height: 6),
@@ -110,9 +110,11 @@ class _HeaderSectionState extends State<HeaderSection> {
             const SizedBox(height: 18),
             Text(
               l10n.text('home.findClass'),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.poppins(
                 color: Colors.white,
-                fontSize: 30,
+                fontSize: 22,
                 fontWeight: FontWeight.w800,
                 height: 1.15,
               ),
