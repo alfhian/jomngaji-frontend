@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_localization.dart';
 import '../../../core/widgets/section_title.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/category_list.dart';
@@ -12,6 +13,8 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       extendBody: true,
       bottomNavigationBar: const AppBottomNav(currentIndex: 0),
@@ -25,12 +28,12 @@ class HomePage extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    SectionTitle(title: 'Kategori Ngaji', showSeeAll: false),
+                  children: [
+                    SectionTitle(title: l10n.text('home.categoryTitle'), showSeeAll: false),
                     SizedBox(height: 12),
                     CategoryList(),
                     SizedBox(height: 24),
-                    SectionTitle(title: 'Quiz Harian', showSeeAll: false),
+                    SectionTitle(title: l10n.text('home.dailyQuizTitle'), showSeeAll: false),
                     SizedBox(height: 12),
                     HomeDailyQuizCard(),
                     SizedBox(height: 24),

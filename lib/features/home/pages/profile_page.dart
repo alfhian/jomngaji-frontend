@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../core/localization/app_localization.dart';
 import '../../../core/widgets/custom_gradient_appbar.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/services/auth_service.dart';
@@ -258,7 +259,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Rata-rata progress: ${avg.toStringAsFixed(1)}%',
+                  context.l10n.text(
+                    'profile.avgProgress',
+                    params: {'value': avg.toStringAsFixed(1)},
+                  ),
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.white70,
@@ -276,11 +280,69 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _languageCard() {
+    final languageController = AppLocalizationScope.controllerOf(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.language_rounded, color: Color(0xFF0F172A)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.text('profile.languageTitle'),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  context.l10n.text('profile.languageSubtitle'),
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<AppLanguage>(
+              value: languageController.value,
+              items: AppLanguage.values.map((language) {
+                return DropdownMenuItem(
+                  value: language,
+                  child: Text(context.l10n.text(language.key)),
+                );
+              }).toList(),
+              onChanged: (language) {
+                if (language != null) {
+                  languageController.setLanguage(language);
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FC),
-      appBar: const CustomGradientAppBar(title: 'Profil Pengguna'),
+      appBar: CustomGradientAppBar(title: context.l10n.text('profile.title')),
       extendBody: true,
       bottomNavigationBar: const AppBottomNav(currentIndex: 3),
       body: _loading
@@ -293,7 +355,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   _profileHeader(),
                   const SizedBox(height: 20),
                   Text(
-                    'Skor Ujian Terbaru',
+                    context.l10n.text('profile.latestExam'),
                     style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 12),
@@ -326,7 +388,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Progress Pembelajaran',
+                    context.l10n.text('profile.learningProgress'),
                     style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 14),
@@ -356,13 +418,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     color: Colors.teal,
                   ),
                   const SizedBox(height: 8),
+                  _languageCard(),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () =>
                           Navigator.pushNamed(context, AppRoutes.resetPassword),
                       icon: const Icon(Icons.lock_reset_rounded),
-                      label: const Text('Reset Password'),
+                      label: Text(context.l10n.text('profile.resetPassword')),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF0F172A),
                         side: const BorderSide(color: Color(0xFFB8C4D8)),
