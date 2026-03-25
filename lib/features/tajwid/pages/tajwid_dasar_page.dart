@@ -97,9 +97,13 @@ class TajwidDasarPage extends StatelessWidget {
     bool isPro = false,
   }) {
     return AnimatedTajwidCard(
-      onTap: () {
+      onTap: () async {
         if (isPro) {
-          showPremiumUpgradeDialog(context, featureName: title);
+          await runWithPremiumGate(
+            context,
+            featureName: title,
+            onAllowed: () => Navigator.pushNamed(context, route),
+          );
           return;
         }
         Navigator.pushNamed(context, route);

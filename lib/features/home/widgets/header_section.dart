@@ -87,6 +87,20 @@ class _HeaderSectionState extends State<HeaderSection> {
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 34,
+                  height: 34,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Image.asset(
+                    'assets/images/icon-jomngaji.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 14),
@@ -109,22 +123,22 @@ class _HeaderSectionState extends State<HeaderSection> {
             ),
             const SizedBox(height: 18),
             Text(
-              l10n.text('home.findClass'),
+              'Yuk lanjut\nngaji hari ini',
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.poppins(
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: 24,
                 fontWeight: FontWeight.w800,
                 height: 1.15,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              l10n.text('home.learnTopics'),
+              'Belajar Iqra, Tajwid, Tilawah, dan Tahfidz dengan progres harian yang jelas.',
               style: GoogleFonts.poppins(
                 color: Colors.white.withOpacity(0.88),
-                fontSize: 12,
+                fontSize: 11.5,
               ),
             ),
           ],

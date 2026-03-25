@@ -113,11 +113,20 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
       final json = jsonDecode(res.body);
 
       if (!mounted) return;
+      final lastRead = json['last_read'] as Map<String, dynamic>?;
+      final lastRecited = json['last_recited'] as Map<String, dynamic>?;
+      final lastReadSurah = lastRead?['surah_name']?.toString();
+      final lastReadAyah = lastRead?['ayah']?.toString();
+      final lastRecitedSurah = lastRecited?['surah_name']?.toString();
+      final lastRecitedAyah = lastRecited?['ayah']?.toString();
+
       setState(() {
-        _lastRead =
-            "${json['last_read']['surah_name']}, Ayat ${json['last_read']['ayah']}";
-        _lastRecited =
-            "${json['last_recited']['surah_name']}, Ayat ${json['last_recited']['ayah']}";
+        _lastRead = (lastReadSurah == null || lastReadAyah == null)
+            ? 'Belum ada aktivitas baca.'
+            : '$lastReadSurah, Ayat $lastReadAyah';
+        _lastRecited = (lastRecitedSurah == null || lastRecitedAyah == null)
+            ? 'Belum ada aktivitas setoran.'
+            : '$lastRecitedSurah, Ayat $lastRecitedAyah';
       });
     } catch (e) {
       debugPrint('Gagal load last activity: $e');
@@ -312,31 +321,29 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
       bottomNavigationBar: const AppBottomNav(currentIndex: 1),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          : ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _progressCard(),
-                  const SizedBox(height: 14),
-                  _searchRow(),
-                  const SizedBox(height: 14),
-                  _previewPlayerCard(),
-                  const SizedBox(height: 14),
-                  _lastActivityCard(),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Daftar Surah',
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0F172A),
-                    ),
+              children: [
+                _progressCard(),
+                const SizedBox(height: 14),
+                _searchRow(),
+                const SizedBox(height: 14),
+                _previewPlayerCard(),
+                const SizedBox(height: 14),
+                _lastActivityCard(),
+                const SizedBox(height: 16),
+                Text(
+                  'Daftar Surah',
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0F172A),
                   ),
-                  const SizedBox(height: 10),
-                  Expanded(child: _surahList()),
-                ],
-              ),
+                ),
+                const SizedBox(height: 10),
+                _surahList(),
+                const SizedBox(height: 80),
+              ],
             ),
     );
   }
@@ -580,15 +587,25 @@ class _TadarusMenuPageState extends State<TadarusMenuPage> {
     }
 
     return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: _filteredSurahs.length,
       itemBuilder: (context, index) {
         final s = _filteredSurahs[index];
         final percent = (s.progress * 100).toStringAsFixed(0);
 
         return GestureDetector(
-          onTap: () {
+          onTap: () async {
             if (s.number != 1) {
-              showPremiumUpgradeDialog(context, featureName: s.name);
+              await runWithPremiumGate(
+                context,
+                featureName: s.name,
+                onAllowed: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.tadarus,
+                  arguments: s,
+                ),
+              );
               return;
             }
             Navigator.pushNamed(

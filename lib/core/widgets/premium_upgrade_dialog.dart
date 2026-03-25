@@ -1,6 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../features/auth/services/auth_service.dart';
+
+Future<void> runWithPremiumGate(
+  BuildContext context, {
+  required String featureName,
+  required VoidCallback onAllowed,
+}) async {
+  final isPremium = await AuthService.isPremiumUser();
+  if (isPremium) {
+    onAllowed();
+    return;
+  }
+  await showPremiumUpgradeDialog(context, featureName: featureName);
+}
+
 Future<void> showPremiumUpgradeDialog(
   BuildContext context, {
   String featureName = 'Fitur ini',

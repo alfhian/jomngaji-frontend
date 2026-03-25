@@ -296,11 +296,12 @@ class _MateriHijaiyahPageState extends State<MateriHijaiyahPage> {
     VoidCallback? onTap,
   }) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (isPremium) {
-          showPremiumUpgradeDialog(
+          await runWithPremiumGate(
             context,
             featureName: 'Pelajaran ke-$number',
+            onAllowed: () => onTap?.call(),
           );
           return;
         }

@@ -51,9 +51,13 @@ class CategoryList extends StatelessWidget {
     return GestureDetector(
       onTap: route == null
           ? null
-          : () {
+          : () async {
               if (route == AppRoutes.tilawahMenu || route == AppRoutes.tahfidzMenu) {
-                showPremiumUpgradeDialog(context, featureName: title);
+                await runWithPremiumGate(
+                  context,
+                  featureName: title,
+                  onAllowed: () => Navigator.pushNamed(context, route),
+                );
                 return;
               }
               Navigator.pushNamed(context, route);

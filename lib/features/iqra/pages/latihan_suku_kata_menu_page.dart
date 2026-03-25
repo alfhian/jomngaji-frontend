@@ -236,11 +236,17 @@ class _LatihanSukuKataMenuPageState extends State<LatihanSukuKataMenuPage> {
     final unlocked = level.isUnlocked;
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (level.isPremium) {
-          showPremiumUpgradeDialog(
+          await runWithPremiumGate(
             context,
             featureName: level.title,
+            onAllowed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => LatihanSukuKataPage(level: level),
+              ),
+            ).then((_) => _loadLevels()),
           );
           return;
         }

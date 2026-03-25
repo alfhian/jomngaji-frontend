@@ -12,6 +12,7 @@ class AuthService {
   static const _keyAccessToken = 'access_token';
   static const _keyUserId = 'userId';
   static const _keyName = 'name';
+  static const _keyIsPremium = 'is_premium';
 
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
@@ -28,6 +29,11 @@ class AuthService {
   static Future<String?> getUserName() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyName);
+  }
+
+  static Future<bool> isPremiumUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyIsPremium) ?? false;
   }
 
   static Future<String?> getAccessToken() async {
@@ -91,6 +97,8 @@ class AuthService {
     final accessToken = data['access_token']?.toString();
     final userIdRaw = data['userId'] ?? data['user_id'] ?? data['id'];
     final name = data['name']?.toString();
+    final premiumRaw =
+        data['is_premium'] ?? data['premium'] ?? data['isPremium'] ?? data['pro'];
 
     if (accessToken == null || accessToken.isEmpty) {
       throw Exception('Response login tidak mengandung access_token');
@@ -110,6 +118,12 @@ class AuthService {
     if (name != null && name.isNotEmpty) {
       await prefs.setString(_keyName, name);
     }
+
+    final premium = premiumRaw == true ||
+        premiumRaw == 1 ||
+        premiumRaw?.toString() == '1' ||
+        premiumRaw?.toString().toLowerCase() == 'true';
+    await prefs.setBool(_keyIsPremium, premium);
   }
 
   static Future<void> register(String email, String password, String name) async {
@@ -130,6 +144,7 @@ class AuthService {
     await prefs.remove(_keyAccessToken);
     await prefs.remove(_keyUserId);
     await prefs.remove(_keyName);
+    await prefs.remove(_keyIsPremium);
   }
 
   static Future<void> resetPassword({

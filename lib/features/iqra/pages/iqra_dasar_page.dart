@@ -106,9 +106,13 @@ class IqraDasarPage extends StatelessWidget {
     bool isPro = false,
   }) {
     return AnimatedIqraCard(
-      onTap: () {
+      onTap: () async {
         if (isPro) {
-          showPremiumUpgradeDialog(context, featureName: title);
+          await runWithPremiumGate(
+            context,
+            featureName: title,
+            onAllowed: () => Navigator.pushNamed(context, route),
+          );
           return;
         }
         Navigator.pushNamed(context, route);

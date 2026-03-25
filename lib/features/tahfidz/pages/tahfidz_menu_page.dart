@@ -118,7 +118,22 @@ class TahfidzMenuPage extends StatelessWidget {
     required int lessonId,
   }) {
     return AnimatedIqraCard(
-      onTap: () => showPremiumUpgradeDialog(context, featureName: title),
+      onTap: () => runWithPremiumGate(
+        context,
+        featureName: title,
+        onAllowed: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => _TahfidzLevelPage(
+              title: title,
+              description: description,
+              levelTag: levelTag,
+              quizCode: quizCode,
+              lessonId: lessonId,
+            ),
+          ),
+        ),
+      ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(16),
@@ -174,7 +189,11 @@ class TahfidzMenuPage extends StatelessWidget {
 
   Widget _examItem(BuildContext context) {
     return AnimatedIqraCard(
-      onTap: () => showPremiumUpgradeDialog(context, featureName: 'Tes Akhir Tahfidz'),
+      onTap: () => runWithPremiumGate(
+        context,
+        featureName: 'Tes Akhir Tahfidz',
+        onAllowed: () => Navigator.pushNamed(context, AppRoutes.examTahfidz),
+      ),
       child: Container(
         margin: const EdgeInsets.only(top: 4, bottom: 14),
         padding: const EdgeInsets.all(16),
