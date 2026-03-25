@@ -282,44 +282,64 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _languageCard() {
     final languageController = AppLocalizationScope.controllerOf(context);
+    final currentLanguageLabel = context.l10n.text(languageController.value.key);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.language_rounded, color: Color(0xFF0F172A)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.text('profile.languageTitle'),
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  context.l10n.text('profile.languageSubtitle'),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.black54,
-                  ),
-                ),
-              ],
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.language_rounded,
+              color: Color(0xFF0F172A),
+              size: 18,
             ),
           ),
           const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.text('profile.languageTitle'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
           DropdownButtonHideUnderline(
             child: DropdownButton<AppLanguage>(
               value: languageController.value,
+              isDense: true,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: const Color(0xFF0F172A),
+                fontWeight: FontWeight.w600,
+              ),
+              selectedItemBuilder: (context) {
+                return AppLanguage.values.map((_) {
+                  return Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      currentLanguageLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList();
+              },
               items: AppLanguage.values.map((language) {
                 return DropdownMenuItem(
                   value: language,
