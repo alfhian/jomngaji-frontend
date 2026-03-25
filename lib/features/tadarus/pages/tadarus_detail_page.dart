@@ -72,7 +72,7 @@ class _TadarusDetailPageState extends State<TadarusDetailPage> {
   Future<int> _fetchCompletedAyahCount(int surahNumber) async {
     final headers = await AuthService.authHeaders();
     final res = await http.get(
-      Uri.parse('http://10.71.164.20:4000/tadarus/progress?surah=$surahNumber'),
+      Uri.parse('http://192.168.1.141:4000/tadarus/progress?surah=$surahNumber'),
       headers: headers,
     );
 

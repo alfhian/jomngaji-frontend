@@ -50,7 +50,7 @@ class _ExamQuestion {
 }
 
 class _ExamIqraPageState extends State<ExamIqraPage> {
-  static const String _baseUrl = 'http://10.71.164.20:4000';
+  static const String _baseUrl = 'http://192.168.1.141:4000';
 
   final List<_ExamQuestion> _questions = const [
     _ExamQuestion.mcq(

@@ -35,7 +35,7 @@ class _TadarusCardState extends State<TadarusCard> {
     try {
       final headers = await AuthService.authHeaders();
       final res = await http.get(
-        Uri.parse('http://10.71.164.20:4000/tadarus/global-progress'),
+        Uri.parse('http://192.168.1.141:4000/tadarus/global-progress'),
         headers: headers,
       );
 

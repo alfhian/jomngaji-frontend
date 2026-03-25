@@ -18,7 +18,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  static const _baseUrl = 'http://10.71.164.20:4000';
+  static const _baseUrl = 'http://192.168.1.141:4000';
 
   bool _loading = true;
   String _name = 'Pengguna';

@@ -47,7 +47,7 @@ class _LatihanPengucapanPageState extends State<LatihanPengucapanPage> {
   @override
   void initState() {
     super.initState();
-    _api = EvaluationApi('http://10.71.164.20:4000');
+    _api = EvaluationApi('http://192.168.1.141:4000');
     _recordedPaths = List<String?>.filled(widget.hurufList.length, null);
     _initRecorder();
   }
