@@ -13,6 +13,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  static const String _googleWebClientId =
+      String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool isLoading = false;
@@ -36,18 +39,28 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _handleGoogleLogin() async {
     setState(() => isGoogleLoading = true);
     try {
-      final googleSignIn = GoogleSignIn(scopes: ['email']);
+      final googleSignIn = GoogleSignIn(
+        scopes: ['email'],
+        serverClientId:
+            _googleWebClientId.isEmpty ? null : _googleWebClientId,
+      );
+
+      await googleSignIn.signOut();
       final account = await googleSignIn.signIn();
       if (account == null) return;
 
       final auth = await account.authentication;
       final idToken = auth.idToken;
+      final accessToken = auth.accessToken;
 
       if (idToken == null || idToken.isEmpty) {
-        throw Exception('Google ID token tidak tersedia');
+        throw Exception(
+          'Google ID token tidak tersedia. '
+          'Set GOOGLE_WEB_CLIENT_ID via --dart-define dan pastikan OAuth client sudah benar.',
+        );
       }
 
-      await AuthService.loginWithGoogle(idToken);
+      await AuthService.loginWithGoogle(idToken, accessToken: accessToken);
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, AppRoutes.home);
     } catch (e) {

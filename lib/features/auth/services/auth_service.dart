@@ -61,10 +61,19 @@ class AuthService {
     await _saveSessionFromResponse(data);
   }
 
-  static Future<void> loginWithGoogle(String idToken) async {
+  static Future<void> loginWithGoogle(
+    String idToken, {
+    String? accessToken,
+  }) async {
+    final body = {
+      'token': idToken,
+      if (accessToken != null && accessToken.isNotEmpty)
+        'access_token': accessToken,
+    };
+
     final res = await http.post(
       Uri.parse('$baseUrl/auth/google'),
-      body: {'token': idToken},
+      body: body,
     );
 
     if (res.statusCode != 200) {
