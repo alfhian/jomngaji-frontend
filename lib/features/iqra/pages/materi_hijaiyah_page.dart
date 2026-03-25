@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/widgets/premium_upgrade_dialog.dart';
 import '../../../services/hijaiyah_service.dart';
 import '../data/hijaiyah_data.dart';
 import 'materi_huruf_detail_page.dart';
@@ -295,7 +296,16 @@ class _MateriHijaiyahPageState extends State<MateriHijaiyahPage> {
     VoidCallback? onTap,
   }) {
     return GestureDetector(
-      onTap: unlocked ? onTap : null,
+      onTap: () {
+        if (isPremium) {
+          showPremiumUpgradeDialog(
+            context,
+            featureName: 'Pelajaran ke-$number',
+          );
+          return;
+        }
+        if (unlocked) onTap?.call();
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(18),

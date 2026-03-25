@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/widgets/premium_upgrade_dialog.dart';
 import '../../../services/suku_kata_service.dart';
 
 class LatihanSukuKataPage extends StatefulWidget {
@@ -75,11 +76,13 @@ class _LatihanSukuKataPageState extends State<LatihanSukuKataPage>
         _sessionQuestions =
             questions.take(min(_maxQuestions, questions.length)).toList();
       });
-    } on PremiumLockedException catch (e) {
+    } on PremiumLockedException {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
+      await showPremiumUpgradeDialog(
+        context,
+        featureName: widget.level.title,
       );
+      if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
